@@ -1,4 +1,4 @@
-# CLAUDE.md — Agent Conventions for Propra
+# CLAUDE.md — Agent Conventions for PropLaw
 
 This file defines the rules and conventions the Claude Code agent must follow throughout this project. Read it before making any change to this codebase.
 
@@ -6,7 +6,7 @@ This file defines the rules and conventions the Claude Code agent must follow th
 
 ## Product Context
 
-- Propra is a **consumer product for German homeowners**. It is not a developer tool and not a B2B product.
+- PropLaw is a **consumer product for German homeowners**. It is not a developer tool and not a B2B product.
 - The end user is someone like **Renate** (67, retired, low technical confidence) or **Tobias** (41, wants to be informed before talking to an architect).
 - Every output the product generates must be:
   - Written in **plain German**
@@ -64,6 +64,17 @@ This file defines the rules and conventions the Claude Code agent must follow th
 - Every API endpoint must have at least **one happy-path test** and **one error-path test** in `propra/tests/`.
 - Every prompt must be tested against at least **5 sample inputs** before being used in the pipeline.
 - KG queries must be tested against the **10 benchmark questions** defined in `propra/eval/benchmark.py`.
+
+---
+
+## Commands & Fallstricke
+
+- Start: `uvicorn propra.main:app --reload` — **nicht** `api.main` wie in der README.
+- Tests: `PYTHONPATH=. pytest propra/tests/`, einzeln mit `-k`.
+- Vollcheck: `bash kontrolle.sh`.
+- Paket heißt `propra`, Produkt heißt PropLaw — Absicht, nicht umbenennen.
+- `propra/graph/*_section_edges.py` sind generiert — niemals von Hand editieren.
+- FAISS `source_file` und KG-Präfix müssen identisch sein, sonst greift GraphRAG nicht.
 
 ---
 
