@@ -9,7 +9,12 @@
 ## How to use this file
 
 * One entry per finding. Assign sequential ID (F001, F002, ...).
-* Status: OPEN / IN REVIEW / CLOSED
+* Status: OPEN / IN REVIEW / DEFERRED / CLOSED
+* Reviewed: date an OPEN finding was last looked at. Set by the
+  /tagesplan skill during day planning — never by hand, and never by
+  an unattended job. A stale Reviewed date is the signal, not noise.
+* An OPEN finding unreviewed for more than 21 days must be scheduled
+  into a day plan or moved to DEFERRED with a reason and a review date.
 * Update status and add resolution when closed.
 * Reference finding IDs in CSV notes column for traceability.
 * Commit this file with every benchmark run.
@@ -22,6 +27,7 @@
 
 **Date:** 2026-03-26
 **Status:** OPEN — pending expert review
+**Reviewed:** 2026-03-26
 **Query:** Q18 — Welche Rolle spielen Rettungswege im Brandschutz?
 **Finding:** GraphRAG scored 0/6 (Retrieval=0, Reasoning=0, Grounding=0).
 Answer content is identical to RAG answer (KG chunks = 0 for this run,
@@ -39,6 +45,7 @@ Expert review required before including this score in aggregates.
 
 **Date:** 2026-03-26
 **Status:** OPEN — re-run required
+**Reviewed:** 2026-03-26
 **Affected rows:** Q5 GraphRAG, Q14 RAG, Q14 GraphRAG, Q16 GraphRAG
 **Finding:** Judge runner failed to score these rows during the
 2026-03-26 run. Likely Anthropic/OpenAI API timeout or rate limit.
@@ -55,6 +62,7 @@ rows and only fill the missing ones.
 
 **Date:** 2026-03-26
 **Status:** OPEN — fix required before GraphRAG comparison is valid
+**Reviewed:** 2026-03-26
 **Finding:** get\_related\_chunks() returned 0 KG-derived chunks for
 every query in the DE-BB run. Root cause: source\_paragraph string
 matching between FAISS chunk metadata and graph node attributes is
@@ -74,6 +82,7 @@ GraphRAG scores reflect pure FAISS retrieval, not KG enrichment.
 
 **Date:** 2026-03-26
 **Status:** OPEN — corpus extraction issue
+**Reviewed:** 2026-03-26
 **Query:** Q13 — Wann ist ein Bauvorhaben verfahrensfrei?
 **Finding:** Both RAG and GraphRAG scored Retrieval=0 for this query.
 The BbgBO corpus does not contain sufficient content from the
@@ -92,6 +101,7 @@ Will improve after corpus fix.
 
 **Date:** 2026-03-26
 **Status:** OPEN — known, document only
+**Reviewed:** 2026-03-26
 **Finding:** Q1 RAG retrieval\_ms = 37,877ms (vs 20-70ms for all
 subsequent queries). This is the sentence-transformer model loading
 on first FAISS call. Skews RAG mean retrieval\_ms significantly.
@@ -108,6 +118,7 @@ is 20-70ms after warm-up.
 
 **Date:** 2026-03-26
 **Status:** OPEN — positive finding, needs investigation
+**Reviewed:** 2026-03-26
 **Query:** Q11 — Welche Zusammenhänge bestehen zwischen
 Brandschutzanforderungen und der Gebäudeklasse?
 **Finding:** GraphRAG scored 6/6 vs RAG 3/6 on this cross-concept
@@ -127,6 +138,7 @@ before KG enrichment is fully active.
 
 **Date:** 2026-09-19
 **Status:** OPEN — refactor required
+**Reviewed:** 2026-09-19
 **Finding:** The mapping Bundesland -> corpus file stem is maintained
 independently in six places: JURISDICTION\_MAP in retrieval/rag.py,
 \_STATE\_REGISTRY in graph/build\_graph.py, \_CORPUS\_MAP in
@@ -150,6 +162,7 @@ rename or new state carries the same silent-mismatch risk.
 
 **Date:** 2026-09-19
 **Status:** OPEN — known, deferred
+**Reviewed:** 2026-09-19
 **Finding:** ruff 0.16.x widened its default rule set (UP, I, SIM, B,
 FLY, BLE, ...). Against the current code it reports 89 findings in
 real modules (plus \~3,000 in the generated \*\_section\_edges.py files,
@@ -219,5 +232,5 @@ chore/claude-setup.
 
 \---
 
-*Last updated: 2026-09-19 — F009 closed, F010/F011 opened*
+*Last updated: 2026-09-19 — Reviewed field added to all OPEN findings; day planning now pulls from this file (see .claude/skills/tagesplan)*
 

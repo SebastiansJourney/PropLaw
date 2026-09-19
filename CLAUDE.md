@@ -78,6 +78,27 @@ This file defines the rules and conventions the Claude Code agent must follow th
 
 ---
 
+## Findings & Tagesplanung
+
+`propra/benchmark/results/FINDINGS.md` ist die einzige Liste offener Befunde.
+Jedes OPEN-Finding traegt ein Feld `**Reviewed:**` — das Datum, an dem es
+zuletzt angeschaut *und entschieden* wurde. Alter = heute minus Reviewed.
+
+- Die Tagesplanung zieht aus dieser Datei: mindestens ein Block pro Arbeitstag
+  kommt aus der OPEN-Liste, und zwar das aelteste Finding, das in die Zeit passt.
+- Ein OPEN-Finding ueber 21 Tage ohne Sichtung muss eingeplant oder nach
+  `DEFERRED` verschoben werden — mit Begruendung und `Deferred until:` Datum.
+- `Reviewed:` setzt ausschliesslich der Skill `/tagesplan`, wenn Sebastian die
+  Planung durchgeht. Nie von Hand, nie durch einen unbeaufsichtigten Lauf:
+  ein automatisch gesetztes Datum verbirgt genau die Alterung, die sichtbar
+  bleiben soll.
+- Ein montaeglicher geplanter Task meldet ueberfaellige Findings, ohne die Datei
+  anzufassen.
+
+Hintergrund: Blocker B-01 stand ab dem 06.09. ganz oben im Audit und wurde erst
+dreizehn Tage spaeter behoben. Sechs weitere Findings lagen fuenf Monate.
+Aufschreiben allein bewirkt nichts.
+
 ## What This Agent Must Never Do
 
 - Never generate **legal advice** — always regulatory information with cited sources.
