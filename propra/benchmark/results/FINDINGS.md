@@ -123,6 +123,47 @@ before KG enrichment is fully active.
 
 \---
 
+### F010 — State-to-corpus-filename mapping hardcoded in six places
+
+**Date:** 2026-09-19
+**Status:** OPEN — refactor required
+**Finding:** The mapping Bundesland -> corpus file stem is maintained
+independently in six places: JURISDICTION\_MAP in retrieval/rag.py,
+\_STATE\_REGISTRY in graph/build\_graph.py, \_CORPUS\_MAP in
+benchmark/judge\_runner.py (both the ISO-code and the plain-label
+variant), jurisdiction\_from\_filename in data/bulk\_inventory.py, and
+data/audit\_extraction\_artifacts.py together with its test. Any rename
+must be applied to all six by hand; F009 is what happens when one of
+them drifts. This is the same class of defect as F003 (FAISS metadata
+and KG attributes agreeing only by convention, with no single source of
+truth). test\_prefix\_alignment.py covers only the first two.
+**Action:** Introduce one canonical registry (stem, ISO code, label,
+KG prefix) and derive the other five from it, or extend
+test\_prefix\_alignment.py to assert all six agree.
+**Impact:** Root cause of F009. Until fixed, every future corpus
+rename or new state carries the same silent-mismatch risk.
+**Owner:** Sebastian
+
+\---
+
+### F011 — 89 open ruff findings in production code
+
+**Date:** 2026-09-19
+**Status:** OPEN — known, deferred
+**Finding:** ruff 0.16.x widened its default rule set (UP, I, SIM, B,
+FLY, BLE, ...). Against the current code it reports 89 findings in
+real modules (plus \~3,000 in the generated \*\_section\_edges.py files,
+which are now excluded via pyproject.toml). ruff is deliberately
+pinned to 0.15.7 in ci.yml, .pre-commit-config.yaml and locally, so
+CI stays green and the 89 stay invisible until the pin is bumped.
+**Action:** Bump the pin to 0.16.x in a dedicated PR and resolve the
+89 findings there. Most are auto-fixable (UP006, I001, UP045, RUF100).
+**Impact:** No runtime impact. Lint debt only; a version bump without
+the cleanup would turn CI red.
+**Owner:** Sebastian
+
+\---
+
 ## Closed Findings
 
 ### F007 — GraphRAG latency incorrectly measured (fixed)
@@ -154,5 +195,29 @@ Committed to feature/benchmark-runner-v2.
 
 \---
 
-*Last updated: 2026-03-26 — baseline run DE-BB*
+### F009 — FAISS/KG prefix misalignment for BW and HB (fixed)
+
+**Date:** 2026-09-19
+**Status:** CLOSED — fixed 2026-09-19
+**Finding:** For Baden-Württemberg and Bremen the FAISS source\_file
+stem (BauO\_BW, LBO\_HB) did not match the KG node prefix (BW\_LBO\_,
+BremLBO\_). kg\_retriever.\_chunk\_to\_node\_id() derives the node ID as
+f"{source\_file}\_§{section}", so every KG lookup for these two states
+missed and GraphRAG silently degraded to plain FAISS retrieval —
+the same symptom as F003, limited to DE-BW and DE-HB. The other 14
+states were aligned.
+**Resolution:** FAISS side aligned to the KG side (BW\_LBO and
+BremLBO are the official abbreviations): txt files renamed via git mv,
+JURISDICTION\_MAP in rag.py, \_CORPUS\_MAP in judge\_runner.py,
+bulk\_inventory.py and audit\_extraction\_artifacts.py updated, FAISS
+index rebuilt (6564 vectors). Regression test
+propra/tests/test\_prefix\_alignment.py checks all 16 states by joining
+JURISDICTION\_MAP and \_STATE\_REGISTRY on the ISO code and running
+\_chunk\_to\_node\_id() against the registry prefix. On
+chore/claude-setup.
+**Owner:** Sebastian
+
+\---
+
+*Last updated: 2026-09-19 — F009 closed, F010/F011 opened*
 
