@@ -23,66 +23,11 @@
 
 ## Open Findings
 
-### F001 — Q18 GraphRAG 0/6 suspicious score
-
-**Date:** 2026-03-26
-**Status:** OPEN — pending expert review
-**Reviewed:** 2026-03-26
-**Query:** Q18 — Welche Rolle spielen Rettungswege im Brandschutz?
-**Finding:** GraphRAG scored 0/6 (Retrieval=0, Reasoning=0, Grounding=0).
-Answer content is identical to RAG answer (KG chunks = 0 for this run,
-meaning both systems received the same context and prompt). A 0/6 score
-is inconsistent with identical content scoring 6/6 for RAG. Likely a
-judge API error or empty response during the GPT-4o judge run.
-**Action:** Re-run judge\_runner.py on Q18 GraphRAG row specifically.
-Expert review required before including this score in aggregates.
-**Impact:** Q18 GraphRAG excluded from current mean totals.
-**Owner:** Matteo (expert validation)
-
-\---
-
-### F002 — 3 missing judge scores (API timeout)
-
-**Date:** 2026-03-26
-**Status:** OPEN — re-run required
-**Reviewed:** 2026-03-26
-**Affected rows:** Q5 GraphRAG, Q14 RAG, Q14 GraphRAG, Q16 GraphRAG
-**Finding:** Judge runner failed to score these rows during the
-2026-03-26 run. Likely Anthropic/OpenAI API timeout or rate limit.
-The runner's resume support means re-running will skip already-scored
-rows and only fill the missing ones.
-**Action:** Re-run: python -m benchmark.judge\_runner benchmark/results/judged\_baseline\_20260326\_1357.csv
-**Impact:** Missing rows excluded from aggregates. RAG mean based on
-19/20 rows, GraphRAG mean based on 16/20 rows.
-**Owner:** Sebastian
-
-\---
-
-### F003 — KG enrichment inactive (0 chunks for all queries)
-
-**Date:** 2026-03-26
-**Status:** OPEN — fix required before GraphRAG comparison is valid
-**Reviewed:** 2026-03-26
-**Finding:** get\_related\_chunks() returned 0 KG-derived chunks for
-every query in the DE-BB run. Root cause: source\_paragraph string
-matching between FAISS chunk metadata and graph node attributes is
-not connecting. FAISS chunks use formats like "§ 6 BbgBO" while graph
-nodes may use slightly different formats. As a result, RAG and
-GraphRAG answers are identical for this entire run — the GraphRAG
-vs RAG delta cannot be meaningfully measured yet.
-**Action:** Sumit to investigate source\_paragraph format alignment
-between rag.py chunk metadata and kg\_retriever.py node matching logic.
-**Impact:** RAG vs GraphRAG comparison is invalid for this run.
-GraphRAG scores reflect pure FAISS retrieval, not KG enrichment.
-**Owner:** Sumit
-
-\---
-
-### F004 — Q13 Verfahrensfreiheit — corpus gap
+### F004 — Q13 Verfahrensfreiheit — retrieval misses § 61 BbgBO (corpus complete)
 
 **Date:** 2026-03-26
 **Status:** OPEN — corpus extraction issue
-**Reviewed:** 2026-03-26
+**Reviewed:** 2026-09-20
 **Query:** Q13 — Wann ist ein Bauvorhaben verfahrensfrei?
 **Finding:** Both RAG and GraphRAG scored Retrieval=0 for this query.
 The BbgBO corpus does not contain sufficient content from the
@@ -101,7 +46,7 @@ Will improve after corpus fix.
 
 **Date:** 2026-03-26
 **Status:** OPEN — known, document only
-**Reviewed:** 2026-03-26
+**Reviewed:** 2026-09-20
 **Finding:** Q1 RAG retrieval\_ms = 37,877ms (vs 20-70ms for all
 subsequent queries). This is the sentence-transformer model loading
 on first FAISS call. Skews RAG mean retrieval\_ms significantly.
@@ -117,8 +62,18 @@ is 20-70ms after warm-up.
 ### F006 — Q11 GraphRAG +3 over RAG — classification layer effect
 
 **Date:** 2026-03-26
-**Status:** OPEN — positive finding, needs investigation
-**Reviewed:** 2026-03-26
+**Status:** DEFERRED — bis Pitch-Vorbereitung
+**Deferred until:** 2026-11-02
+**Reviewed:** 2026-09-20
+**Reason:** Die urspruengliche Hypothese (Delta ohne KG-Chunks =
+Classifier-Effekt) ist auf der aktuellen Pipeline nicht mehr
+untersuchbar — Q11 GraphRAG 4/6 vs RAG 2/6 mit 31 KG-Chunks in
+Stage 3. Die Frage dahinter bleibt offen und ist die wichtigere:
+traegt GraphRAG messbar bei? Audit v7.0 misst +0,03 bis +0,07 auf
+5er-Skala bei +2 s Latenz, 49:22 in 71 Paarvergleichen — Richtung,
+kein Beweis. Zur Pitch-Vorbereitung mit den Stage-3-Daten als
+KG-Evidenz neu formulieren. Wenn zu diesem Datum kein Pitch
+terminiert ist, erneut entscheiden statt weiter verschieben.
 **Query:** Q11 — Welche Zusammenhänge bestehen zwischen
 Brandschutzanforderungen und der Gebäudeklasse?
 **Finding:** GraphRAG scored 6/6 vs RAG 3/6 on this cross-concept
@@ -179,6 +134,77 @@ the cleanup would turn CI red.
 
 ## Closed Findings
 
+### F001 — Q18 GraphRAG 0/6 suspicious score
+
+**Date:** 2026-03-26
+**Status:** CLOSED — superseded 2026-09-20
+**Query:** Q18 — Welche Rolle spielen Rettungswege im Brandschutz?
+**Finding:** GraphRAG scored 0/6 (Retrieval=0, Reasoning=0, Grounding=0).
+Answer content is identical to RAG answer (KG chunks = 0 for this run,
+meaning both systems received the same context and prompt). A 0/6 score
+is inconsistent with identical content scoring 6/6 for RAG. Likely a
+judge API error or empty response during the GPT-4o judge run.
+**Action:** Re-run judge\_runner.py on Q18 GraphRAG row specifically.
+Expert review required before including this score in aggregates.
+**Impact:** Q18 GraphRAG excluded from current mean totals.
+**Resolution:** Superseded. The 0/6 was a judge artefact of the 2026-03-26 run.
+In Stage 3 (judged\_baseline\_20260330\_2254.csv, commit ae0f4db) Q18
+scores 4/6 for both RAG and GraphRAG; the 2026-03-26 run is no longer
+the basis of any aggregate. No expert review needed. Closed during
+day planning 2026-09-20.
+**Owner:** Matteo (expert validation)
+
+\---
+
+### F002 — 3 missing judge scores (API timeout)
+
+**Date:** 2026-03-26
+**Status:** CLOSED — superseded 2026-09-20
+**Affected rows:** Q5 GraphRAG, Q14 RAG, Q14 GraphRAG, Q16 GraphRAG
+**Finding:** Judge runner failed to score these rows during the
+2026-03-26 run. Likely Anthropic/OpenAI API timeout or rate limit.
+The runner's resume support means re-running will skip already-scored
+rows and only fill the missing ones.
+**Action:** Re-run: python -m benchmark.judge\_runner benchmark/results/judged\_baseline\_20260326\_1357.csv
+**Impact:** Missing rows excluded from aggregates. RAG mean based on
+19/20 rows, GraphRAG mean based on 16/20 rows.
+**Resolution:** Superseded by later runs. Source: judged\_baseline\_20260330\_2254.csv
+(Stage 3), 40/40 rows judged (total\_draft populated, no gaps). The
+2026-03-26 CSV was not backfilled and is not used in aggregates.
+Closed during day planning 2026-09-20.
+**Owner:** Sebastian
+
+\---
+
+### F003 — KG enrichment inactive (0 chunks for all queries)
+
+**Date:** 2026-03-26
+**Status:** CLOSED — resolved in Stage 2/3, closed 2026-09-20
+**Finding:** get\_related\_chunks() returned 0 KG-derived chunks for
+every query in the DE-BB run. Root cause: source\_paragraph string
+matching between FAISS chunk metadata and graph node attributes is
+not connecting. FAISS chunks use formats like "§ 6 BbgBO" while graph
+nodes may use slightly different formats. As a result, RAG and
+GraphRAG answers are identical for this entire run — the GraphRAG
+vs RAG delta cannot be meaningfully measured yet.
+**Action:** Sumit to investigate source\_paragraph format alignment
+between rag.py chunk metadata and kg\_retriever.py node matching logic.
+**Impact:** RAG vs GraphRAG comparison is invalid for this run.
+GraphRAG scores reflect pure FAISS retrieval, not KG enrichment.
+**Resolution:** Resolved in Stage 2/3 (commits b0caa2e, ae0f4db). Source:
+judged\_baseline\_20260330\_2254.csv, column kg\_chunks\_added —
+GraphRAG receives 5–35 KG chunks per query there, vs 0 in this run.
+Lineage: F003 (KG enrichment silent for all of DE-BB,
+source\_paragraph format mismatch) → F009 (same symptom, limited to
+DE-BW/DE-HB, FAISS stem vs KG prefix; fixed 2026-09-19, guarded by
+test\_prefix\_alignment.py) → F010 (root cause class: state-to-corpus
+mapping kept in six places without a single source of truth; OPEN).
+The residual risk of F003 lives on in F010. Closed during day
+planning 2026-09-20.
+**Owner:** Sumit
+
+\---
+
 ### F007 — GraphRAG latency incorrectly measured (fixed)
 
 **Date:** 2026-03-26
@@ -232,5 +258,4 @@ chore/claude-setup.
 
 \---
 
-*Last updated: 2026-09-19 — Reviewed field added to all OPEN findings; day planning now pulls from this file (see .claude/skills/tagesplan)*
-
+*Last updated: 2026-09-20 — day planning: F001, F002, F003 closed (superseded by Stage 3), F006 deferred until 2026-11-02, F004 and F005 scheduled*
