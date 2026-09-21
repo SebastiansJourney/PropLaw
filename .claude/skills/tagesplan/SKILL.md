@@ -86,6 +86,12 @@ Setze `**Reviewed:**` auf das heutige Datum — **nur** bei den Findings, die in
 Schritt 2 tatsaechlich aufgelistet und in Schritt 5 entschieden wurden. Das Feld
 bedeutet "angeschaut und entschieden", nicht "existiert noch".
 
+Eine Ausnahme, und nur diese: Bei der **Neuanlage** eines Findings traegt der
+anlegende Lauf `Reviewed:` selbst ein, naemlich das Anlagedatum. Dort startet das
+Feld die Alterung, statt sie zu verbergen. Jede **spaetere** Aenderung von
+`Reviewed:` gehoert ausschliesslich diesem Skill — nicht der Hand, nicht einem
+unbeaufsichtigten Lauf.
+
 Aktualisiere die `Last updated`-Zeile am Dateiende.
 
 Aendere sonst nichts an bestehenden Findings — keine Umformulierung, keine

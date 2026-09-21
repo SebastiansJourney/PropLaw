@@ -55,6 +55,10 @@ aggregates or note as cold-start outlier. Consider warming the model
 before benchmark runs in future.
 **Impact:** Mean RAG retrieval\_ms is inflated. Real retrieval latency
 is 20-70ms after warm-up.
+**Messung 2026-09-21:** Der in der Produktion gemessene Cold Start
+betraegt 82,9 s, nicht die rund 40 s aus dem Benchmark. Die
+Benchmark-Zahl erfasst nur das Laden des Embedding-Modells, nicht das
+Hochfahren der schlafenden Render-Instanz. Siehe F012.
 **Owner:** Sebastian (documentation only)
 
 \---
@@ -129,6 +133,57 @@ CI stays green and the 89 stay invisible until the pin is bumped.
 **Impact:** No runtime impact. Lint debt only; a version bump without
 the cleanup would turn CI red.
 **Owner:** Sebastian
+
+\---
+
+### F012 — Anthropic-Key arbeitet in einem fremden Deployment
+
+**Date:** 2026-09-21
+**Status:** OPEN — Zugriffs- und Kostenrisiko
+**Reviewed:** 2026-09-21
+**Finding:** Der Render-Service proplaw-graphrag wurde in der
+Capstone-Phase von einer ehemaligen Teamkollegin deployt. Sebastian hat
+keinen Zugriff auf diesen Service, kann dort weder Konfiguration noch
+Logs einsehen und ihn nicht abschalten. Der dort hinterlegte API-Key
+gehoert zu seinem Anthropic-Account — fremde Last laeuft also auf seine
+Rechnung, ohne dass er sie sehen oder begrenzen kann. Der Service ist
+nachweislich erreichbar: ein POST auf /api/assess antwortet am
+2026-09-21 mit 422 nach 82,9 s, der Endpoint nimmt Anfragen also
+weiterhin entgegen (Cold Start, siehe F005). Der Key war nie im Repo:
+git log --all -S"sk-ant-" liefert keinen Treffer, .env steht in
+.gitignore.
+**Korrektur zu Audit v7.0:** Audit v7.0 beschreibt den Endpoint unter
+Blocker B-02 als Eigentum des Projekts. Das ist nachweislich falsch —
+das Deployment gehoert der ehemaligen Kollegin, nicht diesem Projekt.
+Die Audit-Datei selbst bleibt unveraendert; diese Zeile ist die
+Korrektur.
+**Action:** Key im Anthropic-Account widerrufen, neuen Key anlegen und
+ausschliesslich lokal in .env halten. Vorher die Kollegin informieren,
+damit ihr Service nicht unangekuendigt ausfaellt.
+**Impact:** Bis zum Widerruf laeuft ein Schluessel unter fremder
+Kontrolle, dessen Nutzung Sebastian weder einsehen noch stoppen kann.
+**Owner:** Sebastian
+
+\---
+
+### F013 — Backend-URL hartkodiert im Frontend
+
+**Date:** 2026-09-21
+**Status:** OPEN — Konfigurationsfehler
+**Reviewed:** 2026-09-21
+**Finding:** propra/frontend/src/pages/AdvisorPage.tsx ruft die
+Render-URL hart kodiert auf (Zeile 423,
+https://proplaw-graphrag.onrender.com/api/assess). Die Adresse gehoert
+in VITE\_API\_URL, damit lokale, Staging- und Produktionsumgebung ohne
+Codeaenderung auseinandergehalten werden koennen. Solange sie im Code
+steht, zeigt das Frontend zwangslaeufig auf das fremde Deployment aus
+F012.
+**Action:** Aufruf auf VITE\_API\_URL umstellen, Variable in .env und in
+der Deployment-Konfiguration setzen. In Audit v7.0 als Erstaufgabe des
+ux-engineer gefuehrt.
+**Impact:** Kein Umschalten der Umgebung ohne Rebuild; koppelt das
+Frontend an F012.
+**Owner:** Sebastian (ux-engineer)
 
 \---
 
