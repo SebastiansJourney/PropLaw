@@ -10,9 +10,12 @@
 
 * One entry per finding. Assign sequential ID (F001, F002, ...).
 * Status: OPEN / IN REVIEW / DEFERRED / CLOSED
-* Reviewed: date an OPEN finding was last looked at. Set by the
-  /tagesplan skill during day planning — never by hand, and never by
-  an unattended job. A stale Reviewed date is the signal, not noise.
+* Reviewed: date an OPEN finding was last looked at. A stale Reviewed
+  date is the signal, not noise.
+* On creation, the run that adds a finding sets Reviewed to the date it
+  was added. That starts the ageing clock instead of hiding it.
+* Every later change to Reviewed is made by the /tagesplan skill during
+  day planning — never by hand, and never by an unattended job.
 * An OPEN finding unreviewed for more than 21 days must be scheduled
   into a day plan or moved to DEFERRED with a reason and a review date.
 * Update status and add resolution when closed.
