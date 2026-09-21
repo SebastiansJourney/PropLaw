@@ -115,3 +115,16 @@ gingen, und welches das naechste ueberfaellige ist.
   Plan — es sei denn, der Nutzer nennt es selbst.
 - Er faerbt nichts schoen. Ein 177 Tage altes Finding wird als 177 Tage altes
   Finding gemeldet.
+
+## Verhaeltnis zu den anderen Teilen
+
+- Das **Tagesbriefing** um 08:00 kommt aufs Handy und nennt genau eine Aufgabe
+  ueber alle Projekte hinweg. Es liest, es schreibt nichts.
+- **Dieser Skill** plant den Block, an dem du gerade sitzt — in dem Repo, in dem
+  du arbeitest. Nicht mechanisch in jedem Projekt. Wechselst du spaeter bewusst
+  das Projekt, rufst du ihn dort erneut auf.
+- **`/feierabend`** schliesst die Sitzung ab und schreibt den Stand fort.
+
+Wenn die Aufgabe aus dem Morgenbriefing noch offen ist, gehoert sie in Block A —
+unabhaengig davon, was die Findings sagen. Was Geld kostet, solange es offen ist,
+schlaegt jedes Finding.
