@@ -88,10 +88,12 @@ zuletzt angeschaut *und entschieden* wurde. Alter = heute minus Reviewed.
   kommt aus der OPEN-Liste, und zwar das aelteste Finding, das in die Zeit passt.
 - Ein OPEN-Finding ueber 21 Tage ohne Sichtung muss eingeplant oder nach
   `DEFERRED` verschoben werden — mit Begruendung und `Deferred until:` Datum.
-- `Reviewed:` setzt ausschliesslich der Skill `/tagesplan`, wenn Sebastian die
-  Planung durchgeht. Nie von Hand, nie durch einen unbeaufsichtigten Lauf:
-  ein automatisch gesetztes Datum verbirgt genau die Alterung, die sichtbar
-  bleiben soll.
+- Bei der **Neuanlage** eines Findings setzt der anlegende Lauf `Reviewed:` auf
+  das Anlagedatum. Das startet die Alterung, statt sie zu verbergen.
+- Jede **spaetere** Aenderung von `Reviewed:` macht ausschliesslich der Skill
+  `/tagesplan`, wenn Sebastian die Planung durchgeht. Nie von Hand, nie durch
+  einen unbeaufsichtigten Lauf: ein nachtraeglich gesetztes Datum verbirgt genau
+  die Alterung, die sichtbar bleiben soll.
 - Ein montaeglicher geplanter Task meldet ueberfaellige Findings, ohne die Datei
   anzufassen.
 
