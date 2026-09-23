@@ -141,8 +141,8 @@ the cleanup would turn CI red.
 
 ### F012 — Anthropic-Key arbeitet in einem fremden Deployment
 
-**Date:** 2026-09-21
-**Status:** OPEN — Zugriffs- und Kostenrisiko
+**Status:** CLOSED — resolved 2026-09-23
+**Reviewed:** 2026-09-23
 **Reviewed:** 2026-09-21
 **Finding:** Der Render-Service proplaw-graphrag wurde in der
 Capstone-Phase von einer ehemaligen Teamkollegin deployt. Sebastian hat
@@ -165,6 +165,7 @@ ausschliesslich lokal in .env halten. Vorher die Kollegin informieren,
 damit ihr Service nicht unangekuendigt ausfaellt.
 **Impact:** Bis zum Widerruf laeuft ein Schluessel unter fremder
 Kontrolle, dessen Nutzung Sebastian weder einsehen noch stoppen kann.
+**Resolution:** Key widerrufen am 2026-09-21, Kollegin informiert. Neuer Key lokal in .env eingerichtet. API-Test erfolgreich: POST /api/assess antwortet HTTP 200 mit vollständiger AssessmentResponse.
 **Owner:** Sebastian
 
 \---
