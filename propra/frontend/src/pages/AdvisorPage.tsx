@@ -420,7 +420,8 @@ const AdvisorPage = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("https://proplaw-graphrag.onrender.com/api/assess", {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/api/assess`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
