@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 import anthropic
 from fastapi.testclient import TestClient
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 _SAMPLE_CHUNKS = [

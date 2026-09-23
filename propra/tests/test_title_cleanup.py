@@ -1,18 +1,22 @@
-import propra.graph.map_to_mbo as map_to_mbo
-from propra.data.generate_lbo_inventory import _clean_body_text
-from propra.data.generate_lbo_inventory import _clean_section_title
-from propra.data.generate_lbo_inventory import _load_sectioned_inventory_sections
-from propra.data.generate_lbo_inventory import _pick_best_title
-from propra.data.generate_lbo_inventory import _preprocess_no_dash
-from propra.data.generate_lbo_inventory import _trim_bauo_he_text
-from propra.data.generate_lbo_inventory import _trim_hbauo_text
-from propra.data.generate_lbo_inventory import _trim_to_occurrence
-from propra.data.generate_lbo_inventory import _trim_to_second_section_one_line
 from propra.data.generate_baybo_inventory_v2 import infer_section_type
-from propra.graph.map_to_mbo import _best_mbo_match
-from propra.graph.map_to_mbo import _clean_title
-from propra.graph.map_to_mbo import _extract_titles
-from propra.graph.map_to_mbo import _find_state_inventory
+from propra.data.generate_lbo_inventory import (
+    _clean_body_text,
+    _clean_section_title,
+    _load_sectioned_inventory_sections,
+    _pick_best_title,
+    _preprocess_no_dash,
+    _trim_bauo_he_text,
+    _trim_hbauo_text,
+    _trim_to_occurrence,
+    _trim_to_second_section_one_line,
+)
+from propra.graph import map_to_mbo
+from propra.graph.map_to_mbo import (
+    _best_mbo_match,
+    _clean_title,
+    _extract_titles,
+    _find_state_inventory,
+)
 
 
 def test_clean_section_title_strips_common_extraction_noise():

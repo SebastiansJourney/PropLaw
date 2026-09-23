@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from propra.graph.kg_retriever import KGEnrichmentResult
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 _SAMPLE_CHUNKS = [

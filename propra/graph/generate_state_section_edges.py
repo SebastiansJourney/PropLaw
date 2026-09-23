@@ -31,7 +31,9 @@ def _state_config(state: str) -> dict:
     """
     Return basic config for a registered state or derive sensible defaults.
     """
-    from propra.graph.build_graph import _STATE_REGISTRY  # local import to avoid startup coupling
+    from propra.graph.build_graph import (
+        _STATE_REGISTRY,  # local import to avoid startup coupling
+    )
 
     for cfg in _STATE_REGISTRY:
         if cfg["name"] == state:

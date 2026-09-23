@@ -20,7 +20,7 @@ _RETRIEVAL_DIR = Path(__file__).resolve().parent.parent / "retrieval"
 if str(_RETRIEVAL_DIR) not in sys.path:
     sys.path.insert(0, str(_RETRIEVAL_DIR))
 
-import rag  # noqa: E402
+import rag
 
 # ── env ───────────────────────────────────────────────────────────────────────
 load_dotenv()

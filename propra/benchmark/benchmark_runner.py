@@ -12,13 +12,13 @@ Usage:
     python benchmark_runner.py
 """
 
-import sys
-import csv
-import time
-import os
 import argparse
-from pathlib import Path
+import csv
+import os
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 
 import anthropic
 from dotenv import load_dotenv
@@ -39,8 +39,9 @@ _PROMPT_PATH = _PROMPTS_DIR / "assess.txt"
 sys.path.insert(0, str(_RETRIEVAL_DIR))
 sys.path.insert(0, str(_PROPRA_DIR.parent))          # so propra.graph.* works
 
-import rag  # noqa: E402
-from propra.graph.kg_retriever import get_related_chunks  # noqa: E402
+import rag
+
+from propra.graph.kg_retriever import get_related_chunks
 
 load_dotenv(_PROJECT_ROOT / ".env")
 

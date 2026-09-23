@@ -10,7 +10,6 @@ Usage:
 """
 
 from pathlib import Path
-from typing import Optional
 
 import networkx as nx
 
@@ -48,7 +47,7 @@ def export_graphml(G: nx.DiGraph, path: str) -> None:
     print(f"GraphML saved: {dest}")
 
 
-def plot_type_distribution(G: nx.DiGraph, save_path: Optional[str] = None) -> None:
+def plot_type_distribution(G: nx.DiGraph, save_path: str | None = None) -> None:
     """
     Plot a bar chart of node counts per type.
 

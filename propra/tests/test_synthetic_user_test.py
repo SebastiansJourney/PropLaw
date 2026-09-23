@@ -5,25 +5,24 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from propra.schemas.synthetic_test import (
-    ComparisonResult,
-    EvaluationResult,
-    Persona,
-)
 from propra.eval.synthetic_user_test import (
     _fill_comparison,
     _fill_eval,
     _fill_response,
     _make_row,
     _parse_llm_json,
-    generate_query,
-    evaluate_response,
-    compare_responses,
     call_assess,
+    compare_responses,
+    evaluate_response,
+    generate_query,
     run,
     write_csv,
 )
-
+from propra.schemas.synthetic_test import (
+    ComparisonResult,
+    EvaluationResult,
+    Persona,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -366,4 +365,4 @@ class TestWriteCsv:
         assert reader[0]["response_time_ms"] == "200"
 
 
-import csv  # noqa: E402 — needed for TestWriteCsv
+import csv

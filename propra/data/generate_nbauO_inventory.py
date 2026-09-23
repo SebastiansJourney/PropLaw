@@ -19,12 +19,11 @@ Usage:
 
 from __future__ import annotations
 
-import re
 import os.path
+import re
 from pathlib import Path
 
-from propra.data.generate_lbo_inventory import _clean_body_text
-from propra.data.generate_lbo_inventory import _clean_section_title
+from propra.data.generate_lbo_inventory import _clean_body_text, _clean_section_title
 
 # ── paths ──────────────────────────────────────────────────────────────────────
 _DATA = Path(__file__).parent

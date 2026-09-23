@@ -1,7 +1,9 @@
 import propra.data.audit_extraction_artifacts as audit_artifacts
-from propra.data.audit_extraction_artifacts import audit_inventory_path
-from propra.data.audit_extraction_artifacts import audit_state
-from propra.data.audit_extraction_artifacts import audit_text_path
+from propra.data.audit_extraction_artifacts import (
+    audit_inventory_path,
+    audit_state,
+    audit_text_path,
+)
 
 
 def test_audit_text_path_counts_known_raw_artifacts(tmp_path):

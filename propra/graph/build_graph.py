@@ -21,14 +21,20 @@ from pathlib import Path
 
 import networkx as nx
 
-from propra.graph.builder import add_edge, add_node, create_graph, graph_summary, save_graph
-from propra.graph.parse_inventory import parse_inventory
-from propra.graph.schema import Node
-from propra.graph.visualize import export_graphml
+from propra.graph.builder import (
+    add_edge,
+    add_node,
+    create_graph,
+    graph_summary,
+    save_graph,
+)
 from propra.graph.mbo_section_edges import edges as mbo_section_edges
+from propra.graph.parse_inventory import parse_inventory
 from propra.graph.references_edges import references_edges
-from propra.graph.state_structural_edges import state_structural_edges
+from propra.graph.schema import Node
 from propra.graph.state_mbo_edges import state_edges_from_mbo
+from propra.graph.state_structural_edges import state_structural_edges
+from propra.graph.visualize import export_graphml
 
 _DATA = Path(__file__).parent.parent / "data"
 _NODE_INVENTORY_DIR = "node inventory"

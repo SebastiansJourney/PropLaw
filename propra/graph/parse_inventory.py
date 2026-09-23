@@ -19,7 +19,6 @@ Recognised patterns:
 
 import re
 from pathlib import Path
-from typing import Optional
 
 from propra.graph.schema import NODE_TYPES, Node
 
@@ -75,7 +74,7 @@ def _normalize_type(label: str) -> str:
     return normalised_map.get(key, key)
 
 
-def _parse_numeric(raw: str) -> tuple[Optional[float], Optional[str]]:
+def _parse_numeric(raw: str) -> tuple[float | None, str | None]:
     """
     Parse a value+unit string into (float, unit_string).
 
@@ -145,9 +144,9 @@ def _is_explicit_id(cell: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def parse_inventory(
-    path: Optional[str] = None,
-    node_prefix: Optional[str] = None,
-    source_suffix: Optional[str] = None,
+    path: str | None = None,
+    node_prefix: str | None = None,
+    source_suffix: str | None = None,
 ) -> list[Node]:
     """
     Parse a node inventory markdown file and return a list of Node objects.
@@ -195,9 +194,9 @@ def parse_inventory(
         return f"{active_prefix}{safe}"
 
     def _emit(node_id: str, node_type: str, text: str,
-              numeric_value: Optional[float] = None,
-              unit: Optional[str] = None,
-              extra_meta: Optional[dict] = None) -> None:
+              numeric_value: float | None = None,
+              unit: str | None = None,
+              extra_meta: dict | None = None) -> None:
         meta: dict = {}
         if table_context:
             meta["context"] = table_context

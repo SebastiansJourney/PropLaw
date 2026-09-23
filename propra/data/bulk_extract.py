@@ -11,9 +11,9 @@ Usage:
     python propra/data/bulk_extract.py --force   # re-extract even if .txt exists
 """
 
-import sys
 import argparse
 import subprocess
+import sys
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')

@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Optional
 
 import networkx as nx
 
@@ -71,7 +70,7 @@ def _mbo_node_to_state_candidates(mbo_nid: str, prefix: str, reverse_map: dict[s
 def state_edges_from_mbo(
     G: nx.DiGraph,
     prefix: str,
-    mapping_path: Optional[Path] = None,
+    mapping_path: Path | None = None,
 ) -> list[Edge]:
     """
     Build state edges by copying MBO section edges via the state↔MBO section mapping.

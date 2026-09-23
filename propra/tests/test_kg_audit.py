@@ -4,14 +4,15 @@ Runs the four audit checks (coverage, orphans, reference integrity, node types)
 as pytest assertions so graph regressions are caught automatically on every test run.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from propra.eval.kg_audit import (
     check_coverage,
+    check_node_types,
     check_orphans,
     check_references,
-    check_node_types,
 )
 from propra.graph.builder import load_graph
 

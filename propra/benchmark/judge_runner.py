@@ -13,16 +13,16 @@ Usage:
     python -m propra.benchmark.judge_runner --input propra/benchmark/results/baseline_<timestamp>.csv
 """
 
-import sys
+import argparse
 import csv
-import time
 import json
 import os
-import argparse
+import sys
+import time
 from pathlib import Path
 
-from openai import OpenAI
 from dotenv import load_dotenv
+from openai import OpenAI
 
 sys.stdout.reconfigure(encoding="utf-8")
 

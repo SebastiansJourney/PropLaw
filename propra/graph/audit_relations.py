@@ -33,8 +33,8 @@ Usage:
 
 import argparse
 import csv
-import re
 import random
+import re
 from collections import defaultdict
 from pathlib import Path
 

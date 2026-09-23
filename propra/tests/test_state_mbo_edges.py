@@ -3,39 +3,41 @@ import json
 import re
 from pathlib import Path
 
+from propra.graph.baybo_section_edges import (
+    section_6_abstandsflaechen_abstaende,
+    section_57_verfahrensfreie_bauvorhaben_beseitigung_von_anla,
+    section_58_genehmigungsfreistellung,
+    section_59_vereinfachtes_baugenehmigungsverfahren,
+    section_60_baugenehmigungsverfahren,
+    section_61_bauvorlageberechtigung,
+    section_61a_bauvorlageberechtigung_staatsangehoeriger_andere,
+    section_61b_bauvorlageberechtigung_auswaertiger_dienstleiste,
+    section_62_bautechnische_nachweise,
+    section_62a_standsicherheitsnachweis,
+    section_62b_brandschutznachweis,
+    section_63_abweichungen,
+    section_64_bauantrag_bauvorlagen,
+    section_65_behandlung_des_bauantrags,
+    section_66_beteiligung_des_nachbarn,
+    section_66a_beteiligung_der_oeffentlichkeit,
+    section_67_ersetzung_des_gemeindlichen_einvernehmens,
+    section_68_baugenehmigung_genehmigungsfiktion_und_baubeginn,
+    section_69_geltungsdauer_der_baugenehmigung_und_der_teilbau,
+    section_70_teilbaugenehmigung,
+    section_71_vorbescheid,
+    section_72_genehmigung_fliegender_bauten,
+    section_73_bauaufsichtliche_zustimmung,
+    section_73a_typengenehmigung,
+    section_75_einstellung_von_arbeiten,
+    section_76_beseitigung_von_anlagen_nutzungsuntersagung,
+    section_77_bauueberwachung,
+    section_78_bauzustandsanzeigen_aufnahme_der_nutzung,
+    section_80_rechtsverordnungen,
+    section_80a_digitale_baugenehmigung_digitale_verfahren,
+    section_81_oertliche_bauvorschriften,
+    section_81a_technische_baubestimmungen,
+)
 from propra.graph.builder import add_node, create_graph
-from propra.graph.baybo_section_edges import section_6_abstandsflaechen_abstaende
-from propra.graph.baybo_section_edges import section_58_genehmigungsfreistellung
-from propra.graph.baybo_section_edges import section_57_verfahrensfreie_bauvorhaben_beseitigung_von_anla
-from propra.graph.baybo_section_edges import section_59_vereinfachtes_baugenehmigungsverfahren
-from propra.graph.baybo_section_edges import section_60_baugenehmigungsverfahren
-from propra.graph.baybo_section_edges import section_61_bauvorlageberechtigung
-from propra.graph.baybo_section_edges import section_61a_bauvorlageberechtigung_staatsangehoeriger_andere
-from propra.graph.baybo_section_edges import section_61b_bauvorlageberechtigung_auswaertiger_dienstleiste
-from propra.graph.baybo_section_edges import section_62_bautechnische_nachweise
-from propra.graph.baybo_section_edges import section_62a_standsicherheitsnachweis
-from propra.graph.baybo_section_edges import section_62b_brandschutznachweis
-from propra.graph.baybo_section_edges import section_63_abweichungen
-from propra.graph.baybo_section_edges import section_64_bauantrag_bauvorlagen
-from propra.graph.baybo_section_edges import section_65_behandlung_des_bauantrags
-from propra.graph.baybo_section_edges import section_66_beteiligung_des_nachbarn
-from propra.graph.baybo_section_edges import section_66a_beteiligung_der_oeffentlichkeit
-from propra.graph.baybo_section_edges import section_67_ersetzung_des_gemeindlichen_einvernehmens
-from propra.graph.baybo_section_edges import section_68_baugenehmigung_genehmigungsfiktion_und_baubeginn
-from propra.graph.baybo_section_edges import section_69_geltungsdauer_der_baugenehmigung_und_der_teilbau
-from propra.graph.baybo_section_edges import section_70_teilbaugenehmigung
-from propra.graph.baybo_section_edges import section_71_vorbescheid
-from propra.graph.baybo_section_edges import section_72_genehmigung_fliegender_bauten
-from propra.graph.baybo_section_edges import section_73_bauaufsichtliche_zustimmung
-from propra.graph.baybo_section_edges import section_73a_typengenehmigung
-from propra.graph.baybo_section_edges import section_75_einstellung_von_arbeiten
-from propra.graph.baybo_section_edges import section_76_beseitigung_von_anlagen_nutzungsuntersagung
-from propra.graph.baybo_section_edges import section_77_bauueberwachung
-from propra.graph.baybo_section_edges import section_78_bauzustandsanzeigen_aufnahme_der_nutzung
-from propra.graph.baybo_section_edges import section_80_rechtsverordnungen
-from propra.graph.baybo_section_edges import section_80a_digitale_baugenehmigung_digitale_verfahren
-from propra.graph.baybo_section_edges import section_81_oertliche_bauvorschriften
-from propra.graph.baybo_section_edges import section_81a_technische_baubestimmungen
 from propra.graph.parse_inventory import parse_inventory
 from propra.graph.schema import Node
 from propra.graph.state_mbo_edges import state_edges_from_mbo

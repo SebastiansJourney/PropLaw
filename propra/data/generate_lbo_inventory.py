@@ -24,9 +24,11 @@ import os.path
 import re
 from pathlib import Path
 
-from propra.graph.build_graph import _is_pure_heading_text
-from propra.graph.build_graph import _strip_known_text_artifacts
-from propra.graph.build_graph import _strip_trailing_heading_text
+from propra.graph.build_graph import (
+    _is_pure_heading_text,
+    _strip_known_text_artifacts,
+    _strip_trailing_heading_text,
+)
 
 # ── State configuration ────────────────────────────────────────────────────────
 # header_type:
@@ -356,7 +358,7 @@ def _make_header_matcher(header_type: str):
             return None
     elif header_type == "from_flat":
         # Never match from txt — handled by generate_from_flat()
-        def match(line: str):  # noqa: ARG001
+        def match(line: str):
             return None
     else:
         raise ValueError(f"Unknown header_type: {header_type!r}")
@@ -769,9 +771,7 @@ def generate(state: str) -> None:
         txt = _trim_bauo_he_text(txt)
     elif state == "HBauO":
         txt = _trim_hbauo_text(txt)
-    elif state in {"BauO_BE", "BauO_LSA", "BauO_MV", "LBO_SH", "LBauO_RLP", "ThuerBO"}:
-        txt = _trim_to_second_section_one_line(txt)
-    elif state == "SaechsBO":
+    elif state in {"BauO_BE", "BauO_LSA", "BauO_MV", "LBO_SH", "LBauO_RLP", "ThuerBO"} or state == "SaechsBO":
         txt = _trim_to_second_section_one_line(txt)
 
     print(f"   Flat inv : {flat_path}")

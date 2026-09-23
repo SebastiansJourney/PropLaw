@@ -1,10 +1,12 @@
-from propra.graph.build_graph import _is_pure_heading_text
-from propra.graph.build_graph import _strip_known_text_artifacts
-from propra.graph.build_graph import _strip_trailing_heading_text
-from propra.graph.build_graph import _clean_text_artifacts
-from propra.graph.build_graph import _prune_empty_content_nodes
-from propra.graph.build_graph import _trim_heading_tails
-from propra.graph.build_graph import _prune_heading_content_nodes
+from propra.graph.build_graph import (
+    _clean_text_artifacts,
+    _is_pure_heading_text,
+    _prune_empty_content_nodes,
+    _prune_heading_content_nodes,
+    _strip_known_text_artifacts,
+    _strip_trailing_heading_text,
+    _trim_heading_tails,
+)
 from propra.graph.builder import add_node, create_graph
 from propra.graph.schema import Node
 

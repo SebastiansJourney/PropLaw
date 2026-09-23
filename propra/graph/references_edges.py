@@ -18,7 +18,6 @@ import networkx as nx
 
 from propra.graph.schema import Edge
 
-
 # § 34, §34, § 6 Absatz 1, §§ 5–7, § 16a
 # Also matches BayBO-style "Art. 34", "Art. 6a"
 _PARA_RE = re.compile(

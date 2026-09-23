@@ -9,4 +9,4 @@ _propra_dir = str(Path(__file__).resolve().parent.parent)
 if _propra_dir not in sys.path:
     sys.path.insert(0, _propra_dir)
 
-from main import app as app  # noqa: E402
+from main import app as app

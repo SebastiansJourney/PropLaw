@@ -14,9 +14,11 @@ import json
 import re
 from pathlib import Path
 
-from propra.graph.build_graph import _is_pure_heading_text
-from propra.graph.build_graph import _strip_known_text_artifacts
-from propra.graph.build_graph import _strip_trailing_heading_text
+from propra.graph.build_graph import (
+    _is_pure_heading_text,
+    _strip_known_text_artifacts,
+    _strip_trailing_heading_text,
+)
 from propra.graph.map_to_mbo import _clean_title
 
 _DATA = Path(__file__).resolve().parent

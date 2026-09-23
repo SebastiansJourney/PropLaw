@@ -11,13 +11,13 @@ from __future__ import annotations
 
 import logging
 import re
-
-import joblib
 import sys
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+import joblib
 
 # Ensure UTF-8 output on Windows (cp1252 consoles would otherwise mangle
 # German legal text in log messages).

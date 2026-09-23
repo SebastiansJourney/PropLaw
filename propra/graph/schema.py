@@ -10,8 +10,6 @@ English as they are structural graph primitives.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
-
 
 # ---------------------------------------------------------------------------
 # Allowed node types (German legal taxonomy — do not translate)
@@ -151,8 +149,8 @@ class Node:
     jurisdiction: str                    # e.g. "DE-BW"
     source_paragraph: str                # e.g. "§6 Abs. 1 Nr. 2 LBO BW"
     text: str                            # statutory wording or rule summary
-    numeric_value: Optional[float] = None    # numeric threshold if applicable
-    unit: Optional[str] = None               # e.g. "m", "m²", "m³", "Jahre"
+    numeric_value: float | None = None    # numeric threshold if applicable
+    unit: str | None = None               # e.g. "m", "m²", "m³", "Jahre"
     metadata: dict = field(default_factory=dict)
 
     def validate(self) -> None:

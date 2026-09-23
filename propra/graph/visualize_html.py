@@ -18,7 +18,6 @@ Usage from Python:
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import networkx as nx
 from pyvis.network import Network
@@ -247,7 +246,7 @@ document.getElementById('kg-input').addEventListener('keydown', function(e) {{
 def render(
     G: nx.DiGraph,
     output_path: str,
-    filter_prefixes: Optional[list[str]] = None,
+    filter_prefixes: list[str] | None = None,
     height: str = "900px",
 ) -> str:
     """

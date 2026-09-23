@@ -1,8 +1,10 @@
-from propra.data.split_inventory_to_sentences import Section
-from propra.data.split_inventory_to_sentences import _clean_segment_text
-from propra.data.split_inventory_to_sentences import _parse_inventory
-from propra.data.split_inventory_to_sentences import _split_paragraph_text
-from propra.data.split_inventory_to_sentences import _write_fine_inventory
+from propra.data.split_inventory_to_sentences import (
+    Section,
+    _clean_segment_text,
+    _parse_inventory,
+    _split_paragraph_text,
+    _write_fine_inventory,
+)
 
 
 def test_parse_inventory_accepts_lettered_section_row_ids(tmp_path):

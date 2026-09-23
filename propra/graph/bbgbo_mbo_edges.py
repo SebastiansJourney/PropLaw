@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import networkx as nx
 
@@ -17,7 +16,7 @@ _MAPPING_FILE = _DATA / "BbgBO_mbo_mapping.json"
 def bbgbo_edges_from_mbo(
     G: nx.DiGraph,
     prefix: str = "BbgBO_",
-    mapping_path: Optional[Path] = None,
+    mapping_path: Path | None = None,
 ) -> list[Edge]:
     """Build BbgBO edges by copying MBO section edges via the section mapping."""
     return state_edges_from_mbo(G, prefix=prefix, mapping_path=mapping_path or _MAPPING_FILE)
