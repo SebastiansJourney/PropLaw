@@ -2,7 +2,7 @@
 
 **Project:** neuefische AIPM Bootcamp Capstone 2025/2026
 **Corpus:** BbgBO (DE-BB) — Phase 1 Baseline
-**Methodology:** benchmark\_methodology\_v2.md
+**Methodology:** docs/benchmark\_methodology\_v2.1.md
 
 \---
 
