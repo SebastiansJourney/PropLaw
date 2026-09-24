@@ -26,7 +26,6 @@ This file defines the rules and conventions the Claude Code agent must follow th
 - All API endpoints must include **input validation** (Pydantic) and return structured error messages:
   - **English** for developers (in the `detail` field)
   - **German** for end users (in the `user_message` field)
-- Never push directly to main, always open a PR.
 
 ### JavaScript / React
 
@@ -67,39 +66,63 @@ This file defines the rules and conventions the Claude Code agent must follow th
 
 ---
 
-## Commands & Fallstricke
+## Commands & Pitfalls
 
-- Start: `uvicorn propra.main:app --reload` — **nicht** `api.main` wie in der README.
-- Tests: `PYTHONPATH=. pytest propra/tests/`, einzeln mit `-k`.
-- Vollcheck: `bash kontrolle.sh`.
-- Paket heißt `propra`, Produkt heißt PropLaw — Absicht, nicht umbenennen.
-- `propra/graph/*_section_edges.py` sind generiert — niemals von Hand editieren.
-- FAISS `source_file` und KG-Präfix müssen identisch sein, sonst greift GraphRAG nicht.
+- Start: `uvicorn propra.main:app --reload` — **not** `api.main` as in the README.
+- Tests: `PYTHONPATH=. pytest propra/tests/`, single tests with `-k`.
+- Full check: `bash kontrolle.sh`.
+- The package is called `propra`, the product is called PropLaw — intentional, do not rename.
+- `propra/graph/*_section_edges.py` are generated — never edit them by hand.
+- FAISS `source_file` and the KG prefix must be identical, otherwise GraphRAG does not apply.
 
 ---
 
-## Findings & Tagesplanung
+## Git Workflow
 
-`propra/benchmark/results/FINDINGS.md` ist die einzige Liste offener Befunde.
-Jedes OPEN-Finding traegt ein Feld `**Reviewed:**` — das Datum, an dem es
-zuletzt angeschaut *und entschieden* wurde. Alter = heute minus Reviewed.
+- CI (`.github/workflows/ci.yml`) runs on every pull request **and** on every push to `main`.
+- Direct pushes to `main` are allowed for small changes without behaviour change: docs, findings, config, comment-only fixes.
+- Everything else goes through a branch and a pull request: refactors, features, dependency or tool version bumps, anything that changes behaviour.
+- Before any push: `bash kontrolle.sh`, or at least `ruff check .` and the tests. The local ruff version must match the pin in `ci.yml`.
+- A red CI run on `main` is fixed before any other work starts.
+- Commit messages are English and follow Conventional Commits (`fix(F011): ...`, `docs(findings): ...`).
+- Commit hashes cited in findings or logs are read from GitHub after the push, never from a local or cloud session.
 
-- Die Tagesplanung zieht aus dieser Datei: mindestens ein Block pro Arbeitstag
-  kommt aus der OPEN-Liste, und zwar das aelteste Finding, das in die Zeit passt.
-- Ein OPEN-Finding ueber 21 Tage ohne Sichtung muss eingeplant oder nach
-  `DEFERRED` verschoben werden — mit Begruendung und `Deferred until:` Datum.
-- Bei der **Neuanlage** eines Findings setzt der anlegende Lauf `Reviewed:` auf
-  das Anlagedatum. Das startet die Alterung, statt sie zu verbergen.
-- Jede **spaetere** Aenderung von `Reviewed:` macht ausschliesslich der Skill
-  `/tagesplan`, wenn Sebastian die Planung durchgeht. Nie von Hand, nie durch
-  einen unbeaufsichtigten Lauf: ein nachtraeglich gesetztes Datum verbirgt genau
-  die Alterung, die sichtbar bleiben soll.
-- Ein montaeglicher geplanter Task meldet ueberfaellige Findings, ohne die Datei
-  anzufassen.
+Background: until 2026-09-24 CI ran on pull requests only. Five direct pushes to `main` went unchecked, and one of them (3fbba20) broke the lint step without anyone noticing.
 
-Hintergrund: Blocker B-01 stand ab dem 06.09. ganz oben im Audit und wurde erst
-dreizehn Tage spaeter behoben. Sechs weitere Findings lagen fuenf Monate.
-Aufschreiben allein bewirkt nichts.
+---
+
+## Language
+
+- All developer-facing content in this repo is English: code, comments, docs, `FINDINGS.md`, this file, commit messages.
+- User-facing product text stays German (see Product Context), as do the `user_message` fields.
+- Benchmark queries and German legal terms (e.g. BbgBO, Verfahrensfreiheit) stay verbatim German — they are data, not prose.
+
+---
+
+## Findings & Day Planning
+
+`propra/benchmark/results/FINDINGS.md` is the only list of open findings.
+Every OPEN finding carries a `**Reviewed:**` field — the date it was last
+looked at *and decided on*. Age = today minus Reviewed.
+
+- Day planning draws from this file: at least one block per working day
+  comes from the OPEN list, namely the oldest finding that fits the time.
+- An OPEN finding unreviewed for more than 21 days must be scheduled or moved
+  to `DEFERRED` — with a reason and a `Deferred until:` date.
+- When a finding is **created**, the creating run sets `Reviewed:` to the
+  creation date. That starts the ageing clock instead of hiding it.
+- Every **later** change to `Reviewed:` is made only by the `/tagesplan` skill
+  while Sebastian goes through the plan. Never by hand, never by an unattended
+  run: a date set after the fact hides exactly the ageing that should stay
+  visible.
+- A finding is updated in the same commit that changes its state.
+  Multi-step findings carry a `**Progress:**` block (see the header of
+  `FINDINGS.md`).
+- A Monday scheduled task reports overdue findings without touching the file.
+
+Background: blocker B-01 was at the top of the audit from 2026-09-06 and was
+fixed only thirteen days later. Six other findings sat for five months.
+Writing things down achieves nothing on its own.
 
 ## What This Agent Must Never Do
 
