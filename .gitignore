@@ -24,12 +24,13 @@ node_modules/
 propra/data/graph*.html
 propra/data/*.csv
 propra/data/graph.graphml
+propra/data/audit_sections/
 
 # IDE
 .idea/
 .vscode/
 
-# Test- und Build-Artefakte
+# Test and build artefacts
 .coverage
 coverage.xml
 htmlcov/
@@ -37,6 +38,9 @@ htmlcov/
 .ruff_cache/
 *.egg-info/
 
-# Retrieval-Artefakte (werden gebaut, nicht committet)
+# Retrieval artefacts (built locally, never committed)
 propra/retrieval/faiss.index
 propra/retrieval/chunks.pkl
+
+# Local Claude session outputs (protocols, drafts)
+Claude outputs/

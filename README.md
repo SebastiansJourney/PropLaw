@@ -56,7 +56,7 @@ Iterative scoring models improved retrieval precision from **2.55 to 3.60 out of
 | Knowledge Graph | NetworkX |
 | Vector Search | FAISS |
 | LLM | Claude (Anthropic) via direct SDK |
-| Orchestration | LangChain (optional) |
+| Embeddings | sentence-transformers (paraphrase-multilingual-MiniLM-L12-v2) |
 | Frontend | React, Tailwind CSS (mobile-first) |
 | Validation | Pydantic v2 |
 
@@ -72,9 +72,9 @@ propra/
 ├── prompts/          # LLM prompt files (.txt / .md)
 ├── schemas/          # Pydantic models for request/response validation
 ├── data/             # data/node inventory/*.md (LBO inventories), data/txt/*.txt (source text), data/raw/ (PDFs); graph.pkl by build
-├── eval/             # Benchmark evaluation scripts
+├── benchmark/        # Benchmark runner, LLM judge, results and FINDINGS.md
+├── eval/             # Synthetic user tests and KG audits
 ├── frontend/         # React frontend application
-├── analytics/        # Event logging
 ├── tests/            # Pytest test suite
 ├── .env.example      # Required environment variables template
 ├── CLAUDE.md         # Agent conventions and code rules
@@ -109,14 +109,17 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY
 
-# Start the API server
-uvicorn api.main:app --reload
+# Build the FAISS index (not versioned, about two minutes)
+python -m propra.retrieval.rag build
+
+# Start the API server (from the repo root)
+uvicorn propra.main:app --reload
 ```
 
 ### Frontend
 
 ```bash
-cd frontend
+cd propra/frontend
 npm install
 npm run dev
 ```
@@ -130,7 +133,7 @@ The frontend will be available at `http://localhost:5173` and the API at `http:/
 From the repo root, with dependencies installed:
 
 ```bash
-# Build graph (MBO + Brandenburg nodes, structural + domain + reference edges)
+# Build graph (MBO + 16 state building codes; only Brandenburg edges are reviewed)
 python -m propra.graph.build_graph
 
 # Interactive node explorer
@@ -150,7 +153,10 @@ Full details and data pipeline: [propra/graph/README.md](propra/graph/README.md)
 ## Running Tests
 
 ```bash
-pytest tests/
+PYTHONPATH=. pytest propra/tests/
+
+# Full check: tests, app import, linter
+bash kontrolle.sh
 ```
 
 ---
