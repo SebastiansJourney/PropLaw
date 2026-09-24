@@ -137,7 +137,7 @@ rename or new state carries the same silent-mismatch risk.
 ### F011 — ruff version drift: local 0.16.6, CI 0.15.7
 
 **Date:** 2026-09-19
-**Status:** OPEN — in progress, CI regression
+**Status:** OPEN — in progress
 **Reviewed:** 2026-09-19
 **Finding:** ruff 0.16.x widened its default rule set (UP, I, SIM, B,
 FLY, BLE, ...). ci.yml and .pre-commit-config.yaml pin ruff to 0.15.7,
@@ -158,13 +158,17 @@ says 186 fixes; the actual diff touches 31 files.
 back, or bump the pin to 0.16.6 in ci.yml and .pre-commit-config.yaml
 and resolve the 40 findings in the same PR. (2) Local ruff must always
 match the pin. (3) Fix the 9 BLE001 first; FLY002 is optional.
-**Impact:** CI on main fails the lint step until (1) is done. No
-runtime impact.
+**Impact:** Lint debt only, no runtime impact. The 40 findings stay
+invisible until the pin is bumped.
 **Progress:**
 - 2026-09-19 · a78cf94 · ruff pinned to 0.15.7 everywhere, generated
   section edges excluded via pyproject.toml.
 - 2026-09-23 · 3fbba20 · auto-fix with ruff 0.16.6, 31 files. Introduced
   the E402 regression described above.
+- 2026-09-24 · Action (1) done via the first option: the 10 removed noqa
+  comments restored in 6 files, local ruff set to 0.15.7 to match the
+  pin. Evidence: `ruff check .` with 0.15.7 reports "All checks passed!".
+  The commit is the one that adds this line.
 **Owner:** Sebastian
 
 \---

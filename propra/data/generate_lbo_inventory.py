@@ -358,7 +358,7 @@ def _make_header_matcher(header_type: str):
             return None
     elif header_type == "from_flat":
         # Never match from txt — handled by generate_from_flat()
-        def match(line: str):
+        def match(line: str):  # noqa: ARG001
             return None
     else:
         raise ValueError(f"Unknown header_type: {header_type!r}")

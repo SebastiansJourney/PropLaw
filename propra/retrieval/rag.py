@@ -247,8 +247,8 @@ def build_index(txt_dir: Path = TXT_DIR, retrieval_dir: Path = RETRIEVAL_DIR) ->
       faiss.index  — FAISS IndexFlatIP (inner-product / cosine after normalisation)
       chunks.pkl   — list[Chunk] in the same order as index vectors
     """
-    import faiss
-    from sentence_transformers import SentenceTransformer
+    import faiss  # noqa: PLC0415 — deferred to avoid slow startup
+    from sentence_transformers import SentenceTransformer  # noqa: PLC0415
 
     retrieval_dir.mkdir(parents=True, exist_ok=True)
 
@@ -327,8 +327,8 @@ class Retriever:
     def _load(self) -> None:
         if self._index is not None:
             return
-        import faiss
-        from sentence_transformers import SentenceTransformer
+        import faiss  # noqa: PLC0415 — deferred to avoid slow startup
+        from sentence_transformers import SentenceTransformer  # noqa: PLC0415
         if not self._index_path.exists():
             raise FileNotFoundError(
                 f"FAISS index not found at {self._index_path}. "

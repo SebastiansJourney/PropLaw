@@ -365,4 +365,4 @@ class TestWriteCsv:
         assert reader[0]["response_time_ms"] == "200"
 
 
-import csv
+import csv  # noqa: E402 — needed for TestWriteCsv
