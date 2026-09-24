@@ -19,6 +19,11 @@
 * An OPEN finding unreviewed for more than 21 days must be scheduled
   into a day plan or moved to DEFERRED with a reason and a review date.
 * Update status and add resolution when closed.
+* Multi-step findings carry a **Progress:** block. One line per
+  completed step: date, what changed, evidence. Evidence is a commit
+  hash read from GitHub after the push, or a command and its output.
+  A local hash that never reached GitHub is not evidence.
+* A finding is updated in the same commit that changes its state.
 * Reference finding IDs in CSV notes column for traceability.
 * Commit this file with every benchmark run.
 
@@ -58,10 +63,10 @@ aggregates or note as cold-start outlier. Consider warming the model
 before benchmark runs in future.
 **Impact:** Mean RAG retrieval\_ms is inflated. Real retrieval latency
 is 20-70ms after warm-up.
-**Messung 2026-09-21:** Der in der Produktion gemessene Cold Start
-betraegt 82,9 s, nicht die rund 40 s aus dem Benchmark. Die
-Benchmark-Zahl erfasst nur das Laden des Embedding-Modells, nicht das
-Hochfahren der schlafenden Render-Instanz. Siehe F012.
+**Measurement 2026-09-21:** The cold start measured in production is
+82.9 s, not the roughly 40 s from the benchmark. The benchmark figure
+covers only loading the embedding model, not waking up the sleeping
+Render instance. See F012.
 **Owner:** Sebastian (documentation only)
 
 \---
@@ -69,18 +74,18 @@ Hochfahren der schlafenden Render-Instanz. Siehe F012.
 ### F006 — Q11 GraphRAG +3 over RAG — classification layer effect
 
 **Date:** 2026-03-26
-**Status:** DEFERRED — bis Pitch-Vorbereitung
+**Status:** DEFERRED — until pitch preparation
 **Deferred until:** 2026-11-02
 **Reviewed:** 2026-09-20
-**Reason:** Die urspruengliche Hypothese (Delta ohne KG-Chunks =
-Classifier-Effekt) ist auf der aktuellen Pipeline nicht mehr
-untersuchbar — Q11 GraphRAG 4/6 vs RAG 2/6 mit 31 KG-Chunks in
-Stage 3. Die Frage dahinter bleibt offen und ist die wichtigere:
-traegt GraphRAG messbar bei? Audit v7.0 misst +0,03 bis +0,07 auf
-5er-Skala bei +2 s Latenz, 49:22 in 71 Paarvergleichen — Richtung,
-kein Beweis. Zur Pitch-Vorbereitung mit den Stage-3-Daten als
-KG-Evidenz neu formulieren. Wenn zu diesem Datum kein Pitch
-terminiert ist, erneut entscheiden statt weiter verschieben.
+**Reason:** The original hypothesis (delta without KG chunks =
+classifier effect) can no longer be tested on the current pipeline —
+Q11 scores GraphRAG 4/6 vs RAG 2/6 with 31 KG chunks in Stage 3. The
+underlying question remains open and is the more important one: does
+GraphRAG contribute measurably? Audit v7.0 measures +0.03 to +0.07 on
+a 5-point scale at +2 s latency, 49:22 in 71 pairwise comparisons —
+a direction, not proof. Reframe for pitch preparation using the
+Stage 3 data as KG evidence. If no pitch is scheduled by that date,
+decide again instead of deferring further.
 **Query:** Q11 — Welche Zusammenhänge bestehen zwischen
 Brandschutzanforderungen und der Gebäudeklasse?
 **Finding:** GraphRAG scored 6/6 vs RAG 3/6 on this cross-concept
@@ -112,86 +117,127 @@ them drifts. This is the same class of defect as F003 (FAISS metadata
 and KG attributes agreeing only by convention, with no single source of
 truth). test\_prefix\_alignment.py covers only the first two.
 **Action:** Introduce one canonical registry (stem, ISO code, label,
-KG prefix) and derive the other five from it, or extend
-test\_prefix\_alignment.py to assert all six agree.
+KG prefix) and derive the other five from it. The finding stays OPEN
+until this refactor is merged; a test alone does not close it.
 **Impact:** Root cause of F009. Until fixed, every future corpus
 rename or new state carries the same silent-mismatch risk.
+**Progress:**
+- 2026-09-19 · fdb9702 · BW and HB prefixes aligned by hand in all six
+  places (F009).
+- 2026-09-19 · test\_prefix\_alignment.py added; asserts only
+  JURISDICTION\_MAP and \_STATE\_REGISTRY (2 of 6).
+- 2026-09-23 · Extension of the test to all six sources was written in a
+  cloud session (local hash e8f6d4b) but never reached GitHub; lost with
+  `git reset --hard origin/main`. Evidence: commit not in the fork,
+  test file on main still imports only the two maps. Still 2 of 6.
 **Owner:** Sebastian
 
 \---
 
-### F011 — 89 open ruff findings in production code
+### F011 — ruff version drift: local 0.16.6, CI 0.15.7
 
 **Date:** 2026-09-19
-**Status:** OPEN — known, deferred
+**Status:** OPEN — in progress, CI regression
 **Reviewed:** 2026-09-19
 **Finding:** ruff 0.16.x widened its default rule set (UP, I, SIM, B,
-FLY, BLE, ...). Against the current code it reports 89 findings in
-real modules (plus \~3,000 in the generated \*\_section\_edges.py files,
-which are now excluded via pyproject.toml). ruff is deliberately
-pinned to 0.15.7 in ci.yml, .pre-commit-config.yaml and locally, so
-CI stays green and the 89 stay invisible until the pin is bumped.
-**Action:** Bump the pin to 0.16.x in a dedicated PR and resolve the
-89 findings there. Most are auto-fixable (UP006, I001, UP045, RUF100).
-**Impact:** No runtime impact. Lint debt only; a version bump without
-the cleanup would turn CI red.
+FLY, BLE, ...). ci.yml and .pre-commit-config.yaml pin ruff to 0.15.7,
+the local environment runs 0.16.6. The earlier count of 89 findings is
+superseded, and so is the figure of 3,858 from the 2026-09-23 session
+(measured outside the repo configuration). Measured on main 3fbba20
+with the repo's pyproject.toml: ruff 0.16.6 reports 40 findings
+(17 FLY002, 9 BLE001, 4 B017, 3 DTZ, 2 ISC004, 5 SIM/RUF/PLW);
+ruff 0.15.7 reports 5 x E402.
+**Cause of the regression:** 3fbba20 ran `ruff check --fix` with 0.16.6.
+That removed 10 `# noqa: E402` comments which 0.16.6 treats as unused
+but 0.15.7 still needs. With the CI pin, `ruff check .` now fails on
+main (propra/api/\_\_init\_\_.py, propra/api/assess.py,
+propra/benchmark/benchmark\_runner.py x2,
+propra/tests/test\_synthetic\_user\_test.py). The commit message
+says 186 fixes; the actual diff touches 31 files.
+**Action:** (1) Restore green CI: either put the removed noqa comments
+back, or bump the pin to 0.16.6 in ci.yml and .pre-commit-config.yaml
+and resolve the 40 findings in the same PR. (2) Local ruff must always
+match the pin. (3) Fix the 9 BLE001 first; FLY002 is optional.
+**Impact:** CI on main fails the lint step until (1) is done. No
+runtime impact.
+**Progress:**
+- 2026-09-19 · a78cf94 · ruff pinned to 0.15.7 everywhere, generated
+  section edges excluded via pyproject.toml.
+- 2026-09-23 · 3fbba20 · auto-fix with ruff 0.16.6, 31 files. Introduced
+  the E402 regression described above.
 **Owner:** Sebastian
-
-\---
-
-### F012 — Anthropic-Key arbeitet in einem fremden Deployment
-
-**Status:** CLOSED — resolved 2026-09-23
-**Reviewed:** 2026-09-23
-**Reviewed:** 2026-09-21
-**Finding:** Der Render-Service proplaw-graphrag wurde in der
-Capstone-Phase von einer ehemaligen Teamkollegin deployt. Sebastian hat
-keinen Zugriff auf diesen Service, kann dort weder Konfiguration noch
-Logs einsehen und ihn nicht abschalten. Der dort hinterlegte API-Key
-gehoert zu seinem Anthropic-Account — fremde Last laeuft also auf seine
-Rechnung, ohne dass er sie sehen oder begrenzen kann. Der Service ist
-nachweislich erreichbar: ein POST auf /api/assess antwortet am
-2026-09-21 mit 422 nach 82,9 s, der Endpoint nimmt Anfragen also
-weiterhin entgegen (Cold Start, siehe F005). Der Key war nie im Repo:
-git log --all -S"sk-ant-" liefert keinen Treffer, .env steht in
-.gitignore.
-**Korrektur zu Audit v7.0:** Audit v7.0 beschreibt den Endpoint unter
-Blocker B-02 als Eigentum des Projekts. Das ist nachweislich falsch —
-das Deployment gehoert der ehemaligen Kollegin, nicht diesem Projekt.
-Die Audit-Datei selbst bleibt unveraendert; diese Zeile ist die
-Korrektur.
-**Action:** Key im Anthropic-Account widerrufen, neuen Key anlegen und
-ausschliesslich lokal in .env halten. Vorher die Kollegin informieren,
-damit ihr Service nicht unangekuendigt ausfaellt.
-**Impact:** Bis zum Widerruf laeuft ein Schluessel unter fremder
-Kontrolle, dessen Nutzung Sebastian weder einsehen noch stoppen kann.
-**Resolution:** Key widerrufen am 2026-09-21, Kollegin informiert. Neuer Key lokal in .env eingerichtet. API-Test erfolgreich: POST /api/assess antwortet HTTP 200 mit vollständiger AssessmentResponse.
-**Owner:** Sebastian
-
-\---
-
-### F013 — Backend-URL hartkodiert im Frontend
-
-**Date:** 2026-09-21
-**Status:** OPEN — Konfigurationsfehler
-**Reviewed:** 2026-09-21
-**Finding:** propra/frontend/src/pages/AdvisorPage.tsx ruft die
-Render-URL hart kodiert auf (Zeile 423,
-https://proplaw-graphrag.onrender.com/api/assess). Die Adresse gehoert
-in VITE\_API\_URL, damit lokale, Staging- und Produktionsumgebung ohne
-Codeaenderung auseinandergehalten werden koennen. Solange sie im Code
-steht, zeigt das Frontend zwangslaeufig auf das fremde Deployment aus
-F012.
-**Action:** Aufruf auf VITE\_API\_URL umstellen, Variable in .env und in
-der Deployment-Konfiguration setzen. In Audit v7.0 als Erstaufgabe des
-ux-engineer gefuehrt.
-**Impact:** Kein Umschalten der Umgebung ohne Rebuild; koppelt das
-Frontend an F012.
-**Owner:** Sebastian (ux-engineer)
 
 \---
 
 ## Closed Findings
+
+### F013 — Backend URL hardcoded in the frontend
+
+**Date:** 2026-09-21
+**Status:** CLOSED — resolved 2026-09-23
+**Reviewed:** 2026-09-21
+**Finding:** propra/frontend/src/pages/AdvisorPage.tsx calls the
+Render URL hardcoded (line 423,
+https://proplaw-graphrag.onrender.com/api/assess). The address belongs
+in VITE\_API\_URL so that local, staging and production environments
+can be told apart without a code change. As long as it is in the code,
+the frontend necessarily points to the third-party deployment from
+F012.
+**Action:** Switch the call to VITE\_API\_URL; set the variable in .env
+and in the deployment configuration. Listed in Audit v7.0 as the first
+task of the ux-engineer.
+**Impact:** No switching of environments without a rebuild; couples the
+frontend to F012.
+**Resolution:** AdvisorPage.tsx:423 reads `import.meta.env.VITE_API_URL`
+with fallback http://localhost:8000. propra/frontend/.env.example
+documents the variable. propra/frontend/src/test/api-url.test.ts
+asserts that the Render address is not in the code and that the
+variable is used. `grep -rn onrender propra/frontend/src` only matches
+the test itself. The second part of the action (set the variable in
+the deployment configuration) does not apply yet: there is no own
+deployment. It belongs to the deploy work in Audit v7.0 phase 2.
+**Progress:**
+- 2026-09-21 · a72dea0 · Finding created (PR #4).
+- 2026-09-23 · 23e4aec · URL switched to VITE\_API\_URL, .env.example
+  and Vitest test added.
+**Owner:** Sebastian (ux-engineer)
+
+\---
+
+### F012 — Anthropic key running in a third-party deployment
+
+**Date:** 2026-09-21
+**Status:** CLOSED — resolved 2026-09-21
+**Reviewed:** 2026-09-23
+**Finding:** The Render service proplaw-graphrag was deployed by a
+former teammate during the capstone phase. Sebastian has no access to
+this service: he cannot see its configuration or logs and cannot shut
+it down. The API key stored there belongs to his Anthropic account, so
+third-party load runs on his bill without him being able to see or
+limit it. The service is demonstrably reachable: on 2026-09-21 a POST
+to /api/assess answered 422 after 82.9 s, so the endpoint still
+accepts requests (cold start, see F005). The key was never in the
+repo: git log --all -S"sk-ant-" returns no match, .env is in
+.gitignore.
+**Correction to Audit v7.0:** Audit v7.0 describes the endpoint under
+blocker B-02 as owned by the project. That is demonstrably wrong — the
+deployment belongs to the former teammate, not to this project. The
+audit file itself stays unchanged; this line is the correction.
+**Action:** Revoke the key in the Anthropic account, create a new key
+and keep it only in the local .env. Inform the former teammate first
+so her service does not fail without notice.
+**Impact:** Until revocation, a key under third-party control is in
+use, and Sebastian can neither see nor stop its usage.
+**Resolution:** Key revoked on 2026-09-21, former teammate informed.
+New key set up locally in .env. API test successful: POST /api/assess
+returns HTTP 200 with a complete AssessmentResponse.
+**Progress:**
+- 2026-09-21 · a72dea0 · Finding created (PR #4).
+- 2026-09-21 · Key revoked, former teammate informed, new key in .env.
+- 2026-09-23 · ab7d9fe · Finding closed.
+**Owner:** Sebastian
+
+\---
 
 ### F001 — Q18 GraphRAG 0/6 suspicious score
 
