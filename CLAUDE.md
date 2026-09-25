@@ -73,7 +73,7 @@ This file defines the rules and conventions the Claude Code agent must follow th
 - Full check: `bash kontrolle.sh`.
 - The package is called `propra`, the product is called PropLaw — intentional, do not rename.
 - `propra/graph/*_section_edges.py` are generated — never edit them by hand.
-- FAISS `source_file` and the KG prefix must be identical, otherwise GraphRAG does not apply.
+- FAISS `source_file` and the KG prefix must be identical, otherwise GraphRAG does not apply. Both derive from `propra/jurisdictions.py`, the only place that maps states to corpus files. Never add a second table.
 
 ---
 

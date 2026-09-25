@@ -30,7 +30,7 @@ This guide is for adding another state’s building code (e.g. BayBO, NBauO) to 
 |------|------|------------------|
 | 1 | Refine inventory to sentence/list-item level (match MBO granularity) | `split_inventory_to_sentences.py` |
 | 2 | Create BbgBO↔MBO section mapping (if you want MBO edges copied) | `map_to_mbo.py` → `data/{STATE}_mbo_mapping.json` |
-| 3 | Register the state and its fine inventory in the build | `build_graph.py` → `_STATE_REGISTRY` |
+| 3 | Register the state in the single registry | `propra/jurisdictions.py` → `JURISDICTIONS` |
 | 4 | Optionally generate a Brandenburg-style reviewable section-edge module | `generate_state_section_edges.py` |
 | 5 | Build and check | `python -m propra.graph.build_graph` |
 
@@ -68,27 +68,27 @@ python -m propra.graph.map_to_mbo --state BayBO
 
 ---
 
-## Step 3 — Register the state in the build
+## Step 3 — Register the state
 
-Edit `propra/graph/build_graph.py` and append one entry to `_STATE_REGISTRY`:
+Add one entry to `JURISDICTIONS` in `propra/jurisdictions.py`. It is the single
+source of truth for which corpus file belongs to which state (F010); the graph
+build, retrieval, benchmark judge and data scripts all derive from it.
 
 ```python
-_STATE_REGISTRY = [
-    # ... existing BbgBO entry ...
-    {
-        "name": "BayBO",                                    # short name, used for mapping file
-        "full_name": "Bayerische Bauordnung (BayBO)",
-        "inventory": "BayBO_node_inventory_fine.md",        # file in data/node inventory/
-        "prefix": "BayBO_",                                 # node ID prefix
-        "source_suffix": "BayBO",                           # for source_paragraph, e.g. "§6 BayBO"
-        "jurisdiction": "DE-BY",
-    },
-]
+Jurisdiction(
+    "BayBO",                           # stem: file name of raw PDF, txt and inventory; KG prefix "BayBO_"
+    "DE-BY",                           # ISO 3166-2 code
+    "Bayern",                          # German label
+    "Bayerische Bauordnung (BayBO)",   # law name shown to users (see F014)
+),
 ```
 
-- **name** must match the mapping file: `data/{name}_mbo_mapping.json`.
-- **inventory** must exist under `propra/data/node inventory/`.
-- **prefix** is used for all node IDs (e.g. `BayBO_§6_1.1`, `BayBO_ROOT`).
+- The **stem** names every file of the state: `data/raw/{stem}.pdf`,
+  `data/txt/{stem}.txt`, `data/node inventory/{stem}_node_inventory_fine.md`,
+  and the mapping file `data/{stem}_mbo_mapping.json`.
+- Node IDs use the prefix `{stem}_` (e.g. `BayBO_§6_1.1`, `BayBO_ROOT`).
+- Run `PYTHONPATH=. pytest propra/tests/test_prefix_alignment.py`. It fails if a
+  file is missing or misnamed.
 
 No other code changes are required for the baseline graph: the build loads the inventory, creates section anchors and structural edges, and copies MBO edges when the mapping file contains confirmed matches.
 
@@ -131,7 +131,7 @@ Then e.g.:
 | Paragraph-level inventory (draft) | `propra/data/node inventory/{STATE}_node_inventory.md` |
 | Fine-grained inventory | `propra/data/node inventory/{STATE}_node_inventory_fine.md` |
 | Section mapping (optional) | `propra/data/{STATE}_mbo_mapping.json` |
-| Registry entry | `propra/graph/build_graph.py` → `_STATE_REGISTRY` |
+| Registry entry | `propra/jurisdictions.py` → `JURISDICTIONS` |
 
 ---
 
@@ -139,9 +139,9 @@ Then e.g.:
 
 You can do this entirely with an AI assistant:
 
-1. **“Add [state] LBO to the knowledge graph”** — point to this doc and the BbgBO entries in `_STATE_REGISTRY` and the files under `propra/data/node inventory/` and `propra/data/BbgBO_mbo_mapping.json`.
+1. **“Add [state] LBO to the knowledge graph”** — point to this doc and the BbgBO entry in `propra/jurisdictions.py` and the files under `propra/data/node inventory/` and `propra/data/BbgBO_mbo_mapping.json`.
 2. **“Refine the inventory for [state] to sentence level”** — run `split_inventory_to_sentences.py` with the right `--input` and `--output` for that state.
 3. **“Create the MBO mapping for [state]”** — run `map_to_mbo --state …`, then review/edit the generated JSON.
-4. **“Register [state] in the graph build”** — add one block to `_STATE_REGISTRY` and set the inventory to the `_fine` file.
+4. **“Register [state]”** — add one `Jurisdiction` entry to `propra/jurisdictions.py` and run `propra/tests/test_prefix_alignment.py`.
 
 The **central node** for the state is always `{prefix}ROOT` (e.g. `BbgBO_ROOT`, `BayBO_ROOT`). All section anchors link to it via `supplements`.
