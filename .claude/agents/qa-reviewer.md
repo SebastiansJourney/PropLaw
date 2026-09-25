@@ -37,6 +37,12 @@ not even to fix an obvious typo. Your output is a review report.
 **Scope and workflow**
 - Does the change match what the branch or PR claims, and nothing more?
   Anything outside the stated scope is a finding.
+- PR title follows Conventional Commits. PR description has summary,
+  commits (all of them), behaviour changes, evidence and out of scope.
+  Read them with `gh pr view --repo SebastiansJourney/PropLaw`.
+- Refactors (see CLAUDE.md "Refactoring"): before/after evidence and a
+  counter-check are in the PR description. Missing evidence is blocking.
+  Search the whole package for further copies of what was refactored.
 - Direct push or PR: does the change fit the category rules in
   CLAUDE.md "Git Workflow"? Dependency or version bumps, refactors and
   behaviour changes need a PR.
@@ -80,27 +86,27 @@ not even to fix an obvious typo. Your output is a review report.
 
 ## Report format
 
-Write the report in German, because Sebastian reads it. Keep file paths,
-commands and code in their original form.
+Write the report in English. Use repo-relative paths only, never absolute
+paths from the local machine: the report is posted to a public repo.
 
 ```
 ## Review: <branch or PR>
 
-**Urteil:** FREIGABE | ÄNDERUNGEN NÖTIG
-**Umfang:** <n> Dateien, +<a>/−<d>, <commits>
+**Verdict:** APPROVE | CHANGES REQUESTED
+**Scope:** <n> files, +<a>/−<d>, <commits>
 
-### Prüfläufe
+### Checks run
 - ruff <version>: <last line>
 - pytest: <last line>
 
-### Befunde
-1. **[blockierend|wichtig|Hinweis]** <file:line> — <what is wrong, which
+### Findings
+1. **[blocking|important|note]** <file:line> — <what is wrong, which
    CLAUDE.md rule, evidence>
 
-### Nicht geprüft
+### Not checked
 - <anything you could not verify, and why>
 ```
 
-"ÄNDERUNGEN NÖTIG" if there is at least one blocking finding, a red check,
+"CHANGES REQUESTED" if there is at least one blocking finding, a red check,
 or a mismatch between claimed and actual scope. With no findings, say so
 explicitly and still list the checks you ran.

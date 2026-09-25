@@ -11,7 +11,7 @@ derive their mappings from this registry instead of keeping their own tables:
 - ``propra.data.bulk_extract.PDFS``                    PDFs to extract
 - ``propra.eval.graph_spot_check.EXPECTED_STATES``    stems expected in the KG
 - ``propra.data.draft_inventory._full_lbo_name``      stem -> law name
-- ``propra.schemas.situation.GERMAN_STATES``          state labels for input validation
+- ``propra.schemas.situation.GERMAN_STATES``          state labels (currently unused)
 
 The ``stem`` is the shared file name for one building code across the data
 directories: ``data/raw/<stem>.pdf``, ``data/txt/<stem>.txt`` and

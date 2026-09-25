@@ -85,10 +85,27 @@ This file defines the rules and conventions the Claude Code agent must follow th
 - Before any push: `bash kontrolle.sh`, or at least `ruff check .` and the tests. The local ruff version must match the pin in `ci.yml`.
 - A red CI run on `main` is fixed before any other work starts.
 - Every pull request is reviewed by the `qa-reviewer` subagent (`.claude/agents/qa-reviewer.md`) before it is merged. Its report goes into the PR as a comment.
+- A fix commit that answers review findings needs a new review only if it changes code behaviour. Fixes to docs, docstrings, `FINDINGS.md` or the PR text are checked by the session that made them.
+- PR title: Conventional Commits, like a commit message. PR description: summary, list of commits, behaviour changes, evidence, out of scope.
+- Merge with `gh pr merge <n> --repo SebastiansJourney/PropLaw --merge --delete-branch`. Merge commits keep the one-commit-per-step history of a PR; do not squash.
 - Commit messages are English and follow Conventional Commits (`fix(F011): ...`, `docs(findings): ...`).
 - Commit hashes cited in findings or logs are read from GitHub after the push, never from a local or cloud session.
 
 Background: until 2026-09-24 CI ran on pull requests only. Five direct pushes to `main` went unchecked, and one of them (3fbba20) broke the lint step without anyone noticing.
+
+---
+
+## Refactoring
+
+Applies to every change that restructures code without intending to change behaviour.
+
+1. Show the design and the list of affected places first; wait for approval. Search the whole package for the pattern, not only the places you already know. If the scope grows while working, stop and report before continuing.
+2. Before changing anything, capture the current state (values, outputs, graph node and edge counts) so equality can be proven afterwards.
+3. One commit per place changed. After each commit, prove the output is unchanged.
+4. Add or extend a test, then break the code on purpose once to show the test catches it.
+5. The PR description lists the before/after evidence. The `qa-reviewer` treats missing evidence as blocking.
+
+Background: F010 (2026-09-25). The first design found eight places, the review found three more.
 
 ---
 
@@ -97,6 +114,8 @@ Background: until 2026-09-24 CI ran on pull requests only. Five direct pushes to
 - All developer-facing content in this repo is English: code, comments, docs, `FINDINGS.md`, this file, commit messages.
 - User-facing product text stays German (see Product Context), as do the `user_message` fields.
 - Benchmark queries and German legal terms (e.g. BbgBO, Verfahrensfreiheit) stay verbatim German — they are data, not prose.
+- PR descriptions, PR comments and review reports are English.
+- Nothing pushed to GitHub (code, docs, PR text, comments) contains absolute paths from a local machine. Use repo-relative paths. The repo is public.
 
 ---
 
