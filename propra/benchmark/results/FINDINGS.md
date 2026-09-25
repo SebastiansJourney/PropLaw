@@ -225,6 +225,33 @@ is the only working environment. Installing new dependencies into
 .venv still works.
 **Owner:** Sebastian
 
+### F017 — kontrolle.sh lint step compares against main instead of gating like CI
+
+**Date:** 2026-09-25
+**Status:** OPEN
+**Reviewed:** 2026-09-25
+**Finding:** Step 3 of kontrolle.sh ([3/3] Linter) counts ruff findings
+on the current tree and on main and reports the difference, but never
+fails the run. CI gates on a plain `ruff check .`
+(.github/workflows/ci.yml). So kontrolle.sh can print "All green" while
+the lint step in CI fails, e.g. when main already has findings or when
+a change keeps the count equal. That is the 3fbba20 case (F011). Two
+further defects in the same step:
+1. Without a local `main` branch (e.g. a clone that only has
+   origin/main) the comparison is skipped, and the message wrongly
+   blames "uncommitted changes in the tree".
+2. For the comparison it runs `git checkout main` and back in the
+   user's working tree. An interrupted run leaves the user on main.
+The original reason for a comparison (about 2,980 findings in the
+generated \*\_section\_edges.py) no longer holds: pyproject.toml
+excludes those files, and `ruff check .` is clean on main.
+**Action:** Make step 3 a plain `ruff check .` gate with the pinned
+ruff, the same command CI runs, and drop the checkout and the
+comparison.
+**Impact:** The pre-push check CLAUDE.md requires can pass while CI
+fails lint, and a red CI on main blocks all other work.
+**Owner:** Sebastian
+
 \---
 
 ## Closed Findings
