@@ -84,6 +84,7 @@ This file defines the rules and conventions the Claude Code agent must follow th
 - Everything else goes through a branch and a pull request: refactors, features, dependency or tool version bumps, anything that changes behaviour.
 - Before any push: `bash kontrolle.sh`, or at least `ruff check .` and the tests. The local ruff version must match the pin in `ci.yml`.
 - A red CI run on `main` is fixed before any other work starts.
+- Every pull request is reviewed by the `qa-reviewer` subagent (`.claude/agents/qa-reviewer.md`) before it is merged. Its report goes into the PR as a comment.
 - Commit messages are English and follow Conventional Commits (`fix(F011): ...`, `docs(findings): ...`).
 - Commit hashes cited in findings or logs are read from GitHub after the push, never from a local or cloud session.
 
