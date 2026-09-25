@@ -15,7 +15,7 @@ python propra/data/extract_pdf_clean.py propra/data/raw/BbgBO.pdf --out-dir prop
 Or re-extract all LBOs (including BbgBO):
 
 ```bash
-python propra/data/bulk_extract.py --force
+python -m propra.data.bulk_extract --force
 ```
 
 **Output:** `propra/data/txt/BbgBO.txt`

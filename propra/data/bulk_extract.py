@@ -7,8 +7,8 @@ Runs extract_pdf_clean.py on every PDF in propra/data/raw/ that does not already
 have a corresponding .txt file in propra/data/txt/. Skips files that are already extracted.
 
 Usage:
-    python propra/data/bulk_extract.py
-    python propra/data/bulk_extract.py --force   # re-extract even if .txt exists
+    python -m propra.data.bulk_extract
+    python -m propra.data.bulk_extract --force   # re-extract even if .txt exists
 """
 
 import argparse
@@ -16,29 +16,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+from propra.jurisdictions import JURISDICTIONS
+
 sys.stdout.reconfigure(encoding='utf-8')
 
 RAW_DIR = Path("propra/data/raw")
 TXT_DIR = Path("propra/data/txt")
 EXTRACTOR = Path("propra/data/extract_pdf_clean.py")
 
-PDFS = [
-    "BauO_BE.pdf",
-    "BauO_HE.pdf",
-    "BauO_LSA.pdf",
-    "BauO_MV.pdf",
-    "BauO_NRW.pdf",
-    "BayBO.pdf",
-    "BbgBO.pdf",
-    "LBO_HB.pdf",
-    "HBauO.pdf",
-    "LBauO_RLP.pdf",
-    "LBO_SH.pdf",
-    "LBO_SL.pdf",
-    "NBauO.pdf",
-    "SaechsBO.pdf",
-    "ThuerBO.pdf",
-]
+# Derived from propra/jurisdictions.py (single source of truth, F010).
+PDFS = [f"{j.stem}.pdf" for j in JURISDICTIONS if j.extract_from_pdf]
 
 
 def main():
@@ -87,7 +74,7 @@ def main():
     if failed:
         print(f"Failed: {', '.join(failed)}")
     print("=" * 60)
-    print("\nNext step: python propra/data/bulk_inventory.py --dry_run")
+    print("\nNext step: python -m propra.data.bulk_inventory --dry_run")
 
 
 if __name__ == "__main__":
