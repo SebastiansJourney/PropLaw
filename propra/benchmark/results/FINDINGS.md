@@ -130,6 +130,13 @@ rename or new state carries the same silent-mismatch risk.
   cloud session (local hash e8f6d4b) but never reached GitHub; lost with
   `git reset --hard origin/main`. Evidence: commit not in the fork,
   test file on main still imports only the two maps. Still 2 of 6.
+- 2026-09-25 · test\_prefix\_alignment.py rewritten: imports all six
+  sources and checks them against the txt files on disk (105 tests).
+  Counter-check: one wrong entry each in judge\_runner.py,
+  bulk\_inventory.py and audit\_extraction\_artifacts.py -> 4 failed.
+  openai added to requirements.txt (judge\_runner.py imports it; it was
+  missing, so a fresh environment could not import the judge). 6 of 6
+  covered; the refactor is still open.
 **Owner:** Sebastian
 
 \---
