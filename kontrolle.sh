@@ -1,134 +1,157 @@
 #!/usr/bin/env bash
-# PropLaw — Kontrolle nach dem Aufräumen.
+# PropLaw — pre-push check.
 #
 #   bash kontrolle.sh
 #
-# Sucht ein venv, aktiviert es, prüft die Test-Abhängigkeiten und läuft
-# dann drei Checks: Tests, Linter, App-Import. Installiert nichts ohne
-# Ansage und fasst nie das globale Python an.
+# Picks the repo's venv (or creates .venv), checks the test dependencies
+# and then runs three checks: tests, app import, linter. Every Python call
+# goes to the venv's interpreter by path, never to whatever `python` is
+# first on PATH, so the global Python is never touched (F015).
 
 set -uo pipefail
 cd "$(dirname "$0")"
 
 if grep -q $'\r' "$0" 2>/dev/null; then
-  echo "Dieses Script hat Windows-Zeilenenden (CRLF)."
-  echo "Einmal reparieren, dann erneut starten:"
+  echo "This script has Windows line endings (CRLF)."
+  echo "Fix it once, then run it again:"
   echo "    sed -i 's/\\r\$//' $(basename "$0")"
   exit 1
 fi
 
 if [ ! -d propra ] || [ ! -d .git ]; then
-  echo "Das hier sieht nicht nach dem PropLaw-Repo aus."
-  echo "Aktuelles Verzeichnis: $(pwd)"
+  echo "This does not look like the PropLaw repo."
+  echo "Current directory: $(pwd)"
   exit 1
 fi
 
-echo
-echo "▸ Schritt 1 — Python finden"
-
-PY=""
-for c in python python3 py; do
-  if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(0 if sys.version_info>=(3,11) else 1)" 2>/dev/null; then
-    PY="$c"; break
+# The venv's interpreter, by path: Scripts/python.exe on Windows,
+# bin/python elsewhere. Empty if the directory has neither.
+venv_python(){
+  if   [ -x "$1/Scripts/python.exe" ]; then echo "$1/Scripts/python.exe"
+  elif [ -x "$1/bin/python" ];         then echo "$1/bin/python"
   fi
-done
-if [ -z "$PY" ]; then
-  echo "  Kein Python 3.11+ gefunden."
-  echo "  Installieren: https://www.python.org/downloads/  (beim Setup 'Add to PATH' anhaken)"
-  exit 1
-fi
-echo "  $PY — $($PY --version 2>&1)"
+}
 
 # ─────────────────────────────────────────────────────────────────────
 echo
-echo "▸ Schritt 2 — virtuelle Umgebung"
+echo "▸ Step 1 — virtual environment"
 
-VENV=""
+VENV_DIR=""
 for d in .venv venv env; do
-  if   [ -f "$d/Scripts/activate" ]; then VENV="$d/Scripts/activate"; break
-  elif [ -f "$d/bin/activate"     ]; then VENV="$d/bin/activate";     break
+  if [ -n "$(venv_python "$d")" ]; then VENV_DIR="$d"; break; fi
+done
+
+if [ -z "$VENV_DIR" ]; then
+  # A system Python is only needed to create the venv.
+  SYS_PY=""
+  for c in python3 python py; do
+    if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(0 if sys.version_info>=(3,11) else 1)" 2>/dev/null; then
+      SYS_PY="$c"; break
+    fi
+  done
+  if [ -z "$SYS_PY" ]; then
+    echo "  No venv found and no Python 3.11+ to create one."
+    echo "  Install: https://www.python.org/downloads/  (tick 'Add to PATH' during setup)"
+    exit 1
+  fi
+  echo "  No venv found. Creating .venv with $SYS_PY ($("$SYS_PY" --version 2>&1)), takes ~20 s..."
+  "$SYS_PY" -m venv .venv || { echo "  Creating the venv failed."; exit 1; }
+  VENV_DIR=.venv
+fi
+
+PY="$(venv_python "$VENV_DIR")"
+
+# Guard: stop before any pip call unless PY really is a venv interpreter.
+if ! "$PY" -c "import sys; sys.exit(0 if sys.prefix != sys.base_prefix else 1)" 2>/dev/null; then
+  echo "  $PY is not a venv interpreter. Stopping before anything is installed."
+  exit 1
+fi
+echo "  Using: $PY ($("$PY" --version 2>&1))"
+
+if [ -n "${VIRTUAL_ENV:-}" ] && ! "$PY" -c "import os, sys; n = lambda p: os.path.normcase(os.path.realpath(p)); sys.exit(0 if n(sys.prefix) == n(os.environ['VIRTUAL_ENV']) else 1)" 2>/dev/null; then
+  echo "  Note: VIRTUAL_ENV points to $VIRTUAL_ENV,"
+  echo "        which is not this repo's venv. Using $VENV_DIR anyway."
+fi
+
+# ─────────────────────────────────────────────────────────────────────
+echo
+echo "▸ Step 2 — dependencies for the check"
+
+# Only what the test suite needs, as pip-name:import-name pairs. faiss-cpu
+# and sentence-transformers (pulls in torch, ~800 MB) are NOT needed: the
+# tests mock retrieval. A real index build needs the full requirements.txt.
+DEPS="pytest:pytest pytest-asyncio:pytest_asyncio fastapi:fastapi pydantic:pydantic httpx:httpx networkx:networkx joblib:joblib anthropic:anthropic openai:openai python-dotenv:dotenv"
+
+# ruff must match the version CI pins (CLAUDE.md "Git Workflow").
+RUFF_PIN=$(grep -oE 'ruff==[0-9][0-9.]*' .github/workflows/ci.yml | head -1)
+if [ -z "$RUFF_PIN" ]; then
+  echo "  No ruff==<version> pin found in .github/workflows/ci.yml."
+  exit 1
+fi
+
+INSTALL=""
+MISSING=""
+for pair in $DEPS; do
+  pkg="${pair%%:*}"; mod="${pair##*:}"
+  if ! "$PY" -c "import $mod" >/dev/null 2>&1; then
+    INSTALL="$INSTALL $pkg"; MISSING="$MISSING $pkg"
   fi
 done
 
-if [ -n "${VIRTUAL_ENV:-}" ]; then
-  echo "  Schon aktiv: $VIRTUAL_ENV"
-elif [ -n "$VENV" ]; then
-  # shellcheck disable=SC1090
-  source "$VENV"
-  echo "  Aktiviert: $VENV"
-else
-  echo "  Kein venv gefunden. Lege .venv an (einmalig, dauert ~20 s)..."
-  "$PY" -m venv .venv || { echo "  venv anlegen fehlgeschlagen."; exit 1; }
-  if   [ -f .venv/Scripts/activate ]; then source .venv/Scripts/activate
-  else source .venv/bin/activate; fi
-  echo "  Aktiviert: .venv"
+RUFF_HAVE=$("$PY" -m ruff --version 2>/dev/null | awk '{print $2}')
+if [ "ruff==$RUFF_HAVE" != "$RUFF_PIN" ]; then
+  INSTALL="$INSTALL $RUFF_PIN"
+  MISSING="$MISSING $RUFF_PIN (have: ${RUFF_HAVE:-none})"
 fi
 
-PY=python   # im venv heißt es immer python
-
-# ─────────────────────────────────────────────────────────────────────
-echo
-echo "▸ Schritt 3 — Abhängigkeiten für die Kontrolle"
-
-# Nur was die 98 Tests wirklich brauchen. faiss-cpu und
-# sentence-transformers (zieht torch, ~800 MB) sind hierfür NICHT nötig —
-# die Tests mocken das Retrieval. Für einen echten Index-Build brauchst du
-# später das volle requirements.txt.
-NEED="pytest ruff fastapi pydantic httpx networkx joblib anthropic python-dotenv pytest-asyncio"
-MISSING=""
-for mod in pytest ruff fastapi pydantic httpx networkx joblib anthropic dotenv; do
-  $PY -c "import $mod" >/dev/null 2>&1 || MISSING="$MISSING $mod"
-done
-
-if [ -n "$MISSING" ]; then
-  echo "  Fehlt:$MISSING"
-  echo "  Installiere ins venv (nicht global)..."
-  $PY -m pip install --quiet --upgrade pip
+if [ -n "$INSTALL" ]; then
+  echo "  Missing:$MISSING"
+  echo "  Installing into $VENV_DIR..."
+  "$PY" -m pip install --quiet --upgrade pip
   # shellcheck disable=SC2086
-  $PY -m pip install --quiet $NEED || { echo "  pip install fehlgeschlagen."; exit 1; }
-  echo "  Fertig."
+  "$PY" -m pip install --quiet $INSTALL || { echo "  pip install failed."; exit 1; }
+  echo "  Done."
 else
-  echo "  Alles da."
+  echo "  All present ($RUFF_PIN)."
 fi
 
 # ─────────────────────────────────────────────────────────────────────
 echo
-echo "▸ Schritt 4 — die Checks"
+echo "▸ Step 3 — the checks"
 echo
 
 FAIL=0
 
-# ── [1/3] Tests — harte Schranke ─────────────────────────────────────
+# ── [1/3] Tests — hard gate ──────────────────────────────────────────
 echo "  [1/3] Tests"
-TESTOUT=$(PYTHONPATH=. $PY -m pytest propra/tests/ -q 2>&1)
+TESTOUT=$(PYTHONPATH=. "$PY" -m pytest propra/tests/ -q 2>&1)
 echo "$TESTOUT" | tail -2 | sed 's/^/        /'
 if echo "$TESTOUT" | grep -qE "^[0-9]+ passed"; then
-  echo "        ✓ grün"
+  echo "        ✓ green"
 else
-  echo "        ✗ rot — hier ist wirklich etwas kaputt"
+  echo "        ✗ red — something is actually broken"
   FAIL=1
 fi
 echo
 
-# ── [2/3] App-Import — harte Schranke ────────────────────────────────
-echo "  [2/3] App-Import"
-if PYTHONPATH=. $PY -c "import propra.main" >/dev/null 2>&1; then
-  echo "        ✓ propra.main importierbar"
+# ── [2/3] App import — hard gate ─────────────────────────────────────
+echo "  [2/3] App import"
+if PYTHONPATH=. "$PY" -c "import propra.main" >/dev/null 2>&1; then
+  echo "        ✓ propra.main imports"
 else
-  PYTHONPATH=. $PY -c "import propra.main" 2>&1 | tail -3 | sed 's/^/        /'
-  echo "        ✗ Import bricht"
+  PYTHONPATH=. "$PY" -c "import propra.main" 2>&1 | tail -3 | sed 's/^/        /'
+  echo "        ✗ import fails"
   FAIL=1
 fi
 echo
 
-# ── [3/3] Linter — Vergleich, keine Schranke ─────────────────────────
-# `ruff check .` als Ja/Nein-Gate taugt hier nicht: das Ergebnis hängt
-# an der ruff-Version, und ~2.980 Befunde stammen aus den generierten
-# *_section_edges.py — also aus Daten, nicht aus Code (TD-01). Was
-# wirklich zählt: hat das Aufräumen NEUE Befunde erzeugt?
-echo "  [3/3] Linter — Vergleich gegen main"
+# ── [3/3] Linter — comparison, not a gate ────────────────────────────
+# `ruff check .` as a yes/no gate does not fit here: ~2,980 findings come
+# from the generated *_section_edges.py, i.e. from data, not code
+# (TD-01). What counts: did this change introduce NEW findings?
+echo "  [3/3] Linter — comparison against main"
 EXC='propra/graph/*_section_edges.py'
-count(){ $PY -m ruff check . --exclude "$EXC" --output-format=concise 2>/dev/null | grep -c ':' ; }
+count(){ "$PY" -m ruff check . --exclude "$EXC" --output-format=concise 2>/dev/null | grep -c ':' ; }
 
 NOW=$(count)
 BASE="?"
@@ -141,17 +164,17 @@ if git rev-parse --verify -q main >/dev/null && git diff --quiet && git diff --c
   fi
 fi
 
-echo "        ruff $($PY -m ruff --version | awk '{print $2}'), generierte Kanten ausgeschlossen"
+echo "        ruff $("$PY" -m ruff --version | awk '{print $2}'), generated edges excluded"
 if [ "$BASE" = "?" ]; then
-  echo "        jetzt: $NOW Befunde (Vergleich mit main nicht möglich —"
-  echo "        uncommittete Änderungen im Tree)"
+  echo "        now: $NOW findings (no comparison with main —"
+  echo "        uncommitted changes in the tree)"
 else
-  echo "        main: $BASE  →  jetzt: $NOW"
+  echo "        main: $BASE  →  now: $NOW"
   if [ "$NOW" -le "$BASE" ]; then
-    echo "        ✓ keine neuen Befunde durch das Aufräumen"
+    echo "        ✓ no new findings"
   else
-    echo "        ! $((NOW-BASE)) neue Befunde — schau dir die an:"
-    echo "          python -m ruff check . --exclude '$EXC'"
+    echo "        ! $((NOW-BASE)) new findings — look at them:"
+    echo "          $PY -m ruff check . --exclude '$EXC'"
   fi
 fi
 
@@ -159,11 +182,9 @@ fi
 echo
 echo "───────────────────────────────────────────────"
 if [ "$FAIL" -eq 0 ]; then
-  echo "  Alles grün. Das Aufräumen hat nichts kaputt gemacht."
-  echo "  Weiter mit Schritt 10: Pull Request öffnen."
+  echo "  All green. Ready to push."
 else
-  echo "  Mindestens ein Check ist rot — Ausgabe oben."
-  echo "  Zum Zurücknehmen:  git checkout main"
+  echo "  At least one check is red — see the output above."
 fi
 echo "───────────────────────────────────────────────"
 echo
