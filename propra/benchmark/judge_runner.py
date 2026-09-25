@@ -24,6 +24,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from propra.jurisdictions import JURISDICTIONS
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 # ---------------------------------------------------------------------------
@@ -153,44 +155,10 @@ GROUND_TRUTH: dict[str, dict] = {
 # ---------------------------------------------------------------------------
 
 # Maps both ISO codes and human labels to the TXT filename stem in _TXT_DIR.
-# Derived from rag.py JURISDICTION_MAP.
+# Derived from propra/jurisdictions.py, the single source of truth (F010).
 _CORPUS_MAP: dict[str, str] = {
-    # ISO 3166-2 codes
-    "DE-BE":  "BauO_BE",
-    "DE-HE":  "BauO_HE",
-    "DE-ST":  "BauO_LSA",
-    "DE-MV":  "BauO_MV",
-    "DE-NW":  "BauO_NRW",
-    "DE-BY":  "BayBO",
-    "DE-BB":  "BbgBO",
-    "DE-HH":  "HBauO",
-    "DE-HB":  "BremLBO",
-    "DE-SH":  "LBO_SH",
-    "DE-SL":  "LBO_SL",
-    "DE-RP":  "LBauO_RLP",
-    "DE-MBO": "MBO",
-    "DE-NI":  "NBauO",
-    "DE-SN":  "SaechsBO",
-    "DE-TH":  "ThuerBO",
-    "DE-BW":  "BW_LBO",
-    # Human labels
-    "Berlin":                   "BauO_BE",
-    "Hessen":                   "BauO_HE",
-    "Sachsen-Anhalt":           "BauO_LSA",
-    "Mecklenburg-Vorpommern":   "BauO_MV",
-    "Nordrhein-Westfalen":      "BauO_NRW",
-    "Bayern":                   "BayBO",
-    "Brandenburg":              "BbgBO",
-    "Hamburg":                  "HBauO",
-    "Bremen":                   "BremLBO",
-    "Schleswig-Holstein":       "LBO_SH",
-    "Saarland":                 "LBO_SL",
-    "Rheinland-Pfalz":          "LBauO_RLP",
-    "Musterbauordnung":         "MBO",
-    "Niedersachsen":            "NBauO",
-    "Sachsen":                  "SaechsBO",
-    "Thüringen":                "ThuerBO",
-    "Baden-Württemberg":        "BW_LBO",
+    **{j.code: j.stem for j in JURISDICTIONS},
+    **{j.label: j.stem for j in JURISDICTIONS},
 }
 
 _CORPUS_TRUNCATE = 90_000
