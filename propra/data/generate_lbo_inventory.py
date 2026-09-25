@@ -29,95 +29,26 @@ from propra.graph.build_graph import (
     _strip_known_text_artifacts,
     _strip_trailing_heading_text,
 )
+from propra.jurisdictions import JURISDICTIONS
 
 # ── State configuration ────────────────────────────────────────────────────────
 # header_type:
 #   dash_date  – § N - Title [date]
 #   no_dash    – § N Title  (title starts immediately after number, no dash)
 #   synoptic   – § N Title § N Title  (HBauO comparison document)
+#   from_flat  – built from a flat inventory file, see _generate_from_flat()
 
+# Derived from propra/jurisdictions.py (single source of truth, F010): every
+# state with a header_type. The per-state notes on header_type live there.
 _STATE_CONFIGS: dict[str, dict] = {
-    "BauO_BE": {
-        "full_name": "Bauordnung für das Land Berlin (BauO BE)",
-        "jurisdiction": "DE-BE",
-        "source_suffix": "BauO_BE",
-        # After trimming the repeated ToC, the actual law body parses as no_dash.
-        "header_type": "no_dash",
-    },
-    "BauO_HE": {
-        "full_name": "Hessische Bauordnung (HBO)",
-        "jurisdiction": "DE-HE",
-        "source_suffix": "BauO_HE",
-        # After dropping the repeated ToC block, the real law body parses as no_dash.
-        "header_type": "no_dash",
-    },
-    "BauO_NRW": {
-        "full_name": "Bauordnung für das Land Nordrhein-Westfalen (BauO NRW)",
-        "jurisdiction": "DE-NW",
-        "source_suffix": "BauO_NRW",
-        "header_type": "no_dash",
-    },
-    "BauO_LSA": {
-        "full_name": "Bauordnung des Landes Sachsen-Anhalt (BauO LSA)",
-        "jurisdiction": "DE-ST",
-        "source_suffix": "BauO_LSA",
-        "header_type": "no_dash",
-    },
-    "BauO_MV": {
-        "full_name": "Landesbauordnung Mecklenburg-Vorpommern (LBauO MV)",
-        "jurisdiction": "DE-MV",
-        "source_suffix": "BauO_MV",
-        "header_type": "no_dash",
-    },
-    "HBauO": {
-        "full_name": "Hamburger Bauordnung (HBauO)",
-        "jurisdiction": "DE-HH",
-        "source_suffix": "HBauO",
-        # Official PDF-backed text parses as no_dash after trimming preamble/annex.
-        "header_type": "no_dash",
-    },
-    "LBO_SH": {
-        "full_name": "Landesbauordnung Schleswig-Holstein (LBO SH)",
-        "jurisdiction": "DE-SH",
-        "source_suffix": "LBO_SH",
-        "header_type": "no_dash",
-    },
-    "LBO_SL": {
-        "full_name": "Landesbauordnung des Saarlandes (LBO SL)",
-        "jurisdiction": "DE-SL",
-        "source_suffix": "LBO_SL",
-        "header_type": "no_dash",
-    },
-    "LBauO_RLP": {
-        "full_name": "Landesbauordnung Rheinland-Pfalz (LBauO RLP)",
-        "jurisdiction": "DE-RP",
-        "source_suffix": "LBauO_RLP",
-        "header_type": "no_dash",
-    },
-    "SaechsBO": {
-        "full_name": "Sächsische Bauordnung (SächsBO)",
-        "jurisdiction": "DE-SN",
-        "source_suffix": "SaechsBO",
-        "header_type": "no_dash",
-    },
-    "ThuerBO": {
-        "full_name": "Thüringer Bauordnung (ThürBO)",
-        "jurisdiction": "DE-TH",
-        "source_suffix": "ThuerBO",
-        "header_type": "no_dash",
-    },
-    "BW_LBO": {
-        "full_name": "Landesbauordnung für Baden-Württemberg (LBO BW)",
-        "jurisdiction": "DE-BW",
-        "source_suffix": "BW_LBO",
-        "header_type": "from_flat",
-    },
-    "BremLBO": {
-        "full_name": "Bremische Landesbauordnung (BremLBO)",
-        "jurisdiction": "DE-HB",
-        "source_suffix": "BremLBO",
-        "header_type": "from_flat",
-    },
+    j.stem: {
+        "full_name": j.full_name,
+        "jurisdiction": j.code,
+        "source_suffix": j.stem,
+        "header_type": j.header_type,
+    }
+    for j in JURISDICTIONS
+    if j.header_type is not None
 }
 
 _DATA = Path(__file__).parent
