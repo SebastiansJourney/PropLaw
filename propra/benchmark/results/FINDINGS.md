@@ -164,38 +164,6 @@ only. Rebuild the graph afterwards (law root nodes carry the name).
 A wrong law title undermines trust in an otherwise correct citation.
 **Owner:** Sebastian (legal-qa)
 
-### F015 — kontrolle.sh trusts VIRTUAL\_ENV and can hit the global Python
-
-**Date:** 2026-09-25
-**Status:** OPEN
-**Reviewed:** 2026-09-25
-**Finding:** Three defects in kontrolle.sh:
-1. Step 2 accepts any set VIRTUAL\_ENV as "already active" and then
-   calls a bare `python` (line 67), without checking which interpreter
-   that is on PATH. On 2026-09-25 VIRTUAL\_ENV pointed to .venv but
-   .venv/Scripts was not on PATH, so `python` resolved to the global
-   pyenv Python. Step 3 reported pytest, fastapi, pydantic, httpx,
-   networkx, anthropic and dotenv as missing (all present in .venv),
-   printed "Installiere ins venv (nicht global)" and ran `pip install`
-   against the global interpreter. It failed only because of an SSL
-   certificate error. Running with .venv/Scripts prepended to PATH gave
-   all green (213 passed).
-2. NEED and the import check lack openai.
-   propra/tests/test\_prefix\_alignment.py imports
-   propra/benchmark/judge\_runner.py, which imports openai. In a fresh
-   venv the script installs its list, reports "Alles da" and then the
-   test step fails at collection instead of installing openai.
-3. The script is German (comments and output), against the Language
-   rule in CLAUDE.md, and its comment still says "98 tests" (line 73);
-   the suite has 213.
-**Action:** Call the venv's interpreter by path instead of trusting
-PATH, add openai to the dependency list, translate to English and drop
-the hard-coded test count. Design first, then a PR.
-**Impact:** The pre-push check CLAUDE.md requires can report false
-failures, and in the worst case install packages into the global Python
-it promises never to touch.
-**Owner:** Sebastian
-
 ### F016 — pip in the global Python and in fresh venvs fails SSL verification
 
 **Date:** 2026-09-25
@@ -255,6 +223,61 @@ fails lint, and a red CI on main blocks all other work.
 \---
 
 ## Closed Findings
+
+### F015 — kontrolle.sh trusts VIRTUAL\_ENV and can hit the global Python
+
+**Date:** 2026-09-25
+**Status:** CLOSED — resolved 2026-09-25
+**Reviewed:** 2026-09-25
+**Finding:** Three defects in kontrolle.sh:
+1. Step 2 accepts any set VIRTUAL\_ENV as "already active" and then
+   calls a bare `python` (line 67), without checking which interpreter
+   that is on PATH. On 2026-09-25 VIRTUAL\_ENV pointed to .venv but
+   .venv/Scripts was not on PATH, so `python` resolved to the global
+   pyenv Python. Step 3 reported pytest, fastapi, pydantic, httpx,
+   networkx, anthropic and dotenv as missing (all present in .venv),
+   printed "Installiere ins venv (nicht global)" and ran `pip install`
+   against the global interpreter. It failed only because of an SSL
+   certificate error. Running with .venv/Scripts prepended to PATH gave
+   all green (213 passed).
+2. NEED and the import check lack openai.
+   propra/tests/test\_prefix\_alignment.py imports
+   propra/benchmark/judge\_runner.py, which imports openai. In a fresh
+   venv the script installs its list, reports "Alles da" and then the
+   test step fails at collection instead of installing openai.
+3. The script is German (comments and output), against the Language
+   rule in CLAUDE.md, and its comment still says "98 tests" (line 73);
+   the suite has 213.
+**Action:** Call the venv's interpreter by path instead of trusting
+PATH, add openai to the dependency list, translate to English and drop
+the hard-coded test count. Design first, then a PR.
+**Impact:** The pre-push check CLAUDE.md requires can report false
+failures, and in the worst case install packages into the global Python
+it promises never to touch.
+**Resolution:** kontrolle.sh picks the repo venv (.venv, venv, env) and
+calls its interpreter by path (Scripts/python.exe or bin/python); no
+bare `python` after the venv step. A guard stops the script before any
+pip call unless the interpreter is a venv (sys.prefix != sys.base\_prefix).
+VIRTUAL\_ENV is only used for a warning when it points elsewhere. The
+dependency list is one set of pip-name:import-name pairs (openai added;
+pytest-asyncio is now checked, not only installed). ruff is installed at
+the version pinned in .github/workflows/ci.yml, read from that file.
+Script translated to English; the test count is gone.
+Evidence: with VIRTUAL\_ENV set and .venv/Scripts not on PATH (the
+2026-09-25 case) the script uses .venv/Scripts/python.exe, installs
+nothing, 213 passed. Same without VIRTUAL\_ENV. With VIRTUAL\_ENV
+pointing to another venv it warns and uses .venv. The guard rejects the
+global pyenv Python and accepts .venv. A run from a fresh venv is not
+possible on the development machine (F016); it was done in a fresh
+Linux clone instead, see Progress.
+**Progress:**
+- 2026-09-25 · a0644d6 · Fresh Linux clone, no venv, VIRTUAL\_ENV unset,
+  run by Sebastian: created .venv with Python 3.12.3, installed pytest,
+  pytest-asyncio, fastapi, pydantic, httpx, networkx, joblib, anthropic,
+  openai, python-dotenv and ruff==0.15.7; 213 passed, app imports, ruff
+  0.15.7 clean, "All green". A second run reported "All present
+  (ruff==0.15.7)" without installing.
+**Owner:** Sebastian
 
 ### F010 — State-to-corpus-filename mapping hardcoded in six places
 
