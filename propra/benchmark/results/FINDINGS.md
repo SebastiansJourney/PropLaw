@@ -235,7 +235,10 @@ the audit skips them), STATES in data/fix\_flat\_inventories.py (subset
 for a one-off script) and the per-state trim rules in
 generate\_lbo\_inventory.py. The test checks that the keys of the first
 two are registry stems. parse\_inventory.py and builder.py still default
-to "DE-BW" from the early single-state phase.
+to "DE-BW" from the early single-state phase. BUNDESLAENDER in
+propra/frontend/src/pages/AdvisorPage.tsx is a hand-written list of
+state labels in the frontend, which cannot import the Python registry;
+no test binds it to the registry labels.
 **Owner:** Sebastian
 
 \---
