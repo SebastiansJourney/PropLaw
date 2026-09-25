@@ -196,6 +196,35 @@ failures, and in the worst case install packages into the global Python
 it promises never to touch.
 **Owner:** Sebastian
 
+### F016 — pip in the global Python and in fresh venvs fails SSL verification
+
+**Date:** 2026-09-25
+**Status:** OPEN
+**Reviewed:** 2026-09-25
+**Finding:** pip 22.3.1 in the global pyenv Python 3.11.3 cannot reach
+PyPI on the development machine. Every request fails with:
+`Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1002)'))`
+followed by `ERROR: Could not find a version that satisfies the
+requirement <package> (from versions: none)`. A venv freshly created
+from that Python inherits pip 22.3.1 and fails the same way, including
+`pip install --upgrade pip`, so it cannot repair itself. The existing
+project .venv (pip 26.2.1, same Python and OpenSSL 1.1.1t) reaches PyPI
+without error; checked with `pip install --dry-run`. Not verified: why
+the newer pip succeeds. A likely cause is that pip 24.2+ uses the
+Windows certificate store (truststore) while 22.3.1 uses only its
+bundled certifi, and a local proxy or security tool presents a
+certificate that only the Windows store trusts.
+**Action:** Find which certificate intercepts the connection, then
+either upgrade pip in the global Python once (e.g. via
+`--use-feature=truststore` or a temporary `--cert`) or point pip at the
+Windows store. Afterwards, check that a fresh venv can install
+requirements.txt.
+**Impact:** No new venv can be set up on this machine, so kontrolle.sh
+cannot be run from a fresh venv here (F015), and the existing .venv
+is the only working environment. Installing new dependencies into
+.venv still works.
+**Owner:** Sebastian
+
 \---
 
 ## Closed Findings
