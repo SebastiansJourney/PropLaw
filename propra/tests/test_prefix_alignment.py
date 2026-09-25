@@ -1,27 +1,28 @@
-"""Check that every state-to-corpus mapping in the codebase agrees (F009, F010).
+"""Check that every state-to-corpus mapping agrees with one registry (F009, F010).
 
-The mapping "federal state -> corpus file stem" is currently held in six
-places. Each one is imported here, never copied, and compared against the
-ground truth on disk: the stems of ``propra/data/txt/*.txt``.
+``propra/jurisdictions.py`` is the single source of truth for which corpus file
+belongs to which jurisdiction. These tests check two things:
 
-1. ``JURISDICTION_MAP``            propra/retrieval/rag.py
-2. ``_STATE_REGISTRY``             propra/graph/build_graph.py
-3. ``_CORPUS_MAP`` (ISO codes)     propra/benchmark/judge_runner.py
-4. ``_CORPUS_MAP`` (state labels)  propra/benchmark/judge_runner.py
-5. ``jurisdiction_from_filename``  propra/data/bulk_inventory.py
-6. ``_TXT_PATH_OVERRIDES`` and ``discover_states``
-                                   propra/data/audit_extraction_artifacts.py
+1. The registry matches the files on disk (raw PDFs, txt files, inventories).
+2. Every module that used to keep its own table now equals what the registry
+   produces. Each module is imported, never copied:
 
-``JURISDICTION_MAP`` is used as the join table (stem, ISO code, label); it is
-itself checked against the files on disk first.
+   - ``JURISDICTION_MAP``            propra/retrieval/rag.py
+   - ``_STATE_REGISTRY``             propra/graph/build_graph.py
+   - ``_CORPUS_MAP`` (ISO + labels)  propra/benchmark/judge_runner.py
+   - ``jurisdiction_from_filename``  propra/data/bulk_inventory.py
+   - ``_STATE_CONFIGS``              propra/data/generate_lbo_inventory.py
+   - ``PDFS``                        propra/data/bulk_extract.py
+   - ``_TXT_PATH_OVERRIDES`` and ``discover_states``
+                                     propra/data/audit_extraction_artifacts.py
 
 Why it matters: GraphRAG derives a KG node ID from FAISS chunk metadata
 (``f"{source_file}_§{section}"``). If one mapping drifts, lookups for that
 state miss silently and GraphRAG degrades to plain vector retrieval without
 any error. That happened for Baden-Württemberg and Bremen until 2026-09-19.
 
-These tests stay after the F010 refactor: once all six places derive from one
-registry they pass trivially, and they catch anyone who reintroduces a copy.
+A new module that maps states to corpus files must derive from the registry
+and be added here. Keeping a second hand-written table is a review finding.
 """
 
 from pathlib import Path
@@ -35,126 +36,163 @@ from propra.data.audit_extraction_artifacts import (
     _TXT_PATH_OVERRIDES,
     discover_states,
 )
+from propra.data.bulk_extract import PDFS
 from propra.data.bulk_inventory import jurisdiction_from_filename
+from propra.data.generate_lbo_inventory import _STATE_CONFIGS
 from propra.graph.build_graph import _STATE_REGISTRY
 from propra.graph.kg_retriever import _chunk_to_node_id
+from propra.jurisdictions import JURISDICTIONS, STATES, by_code, by_label, by_stem
 from propra.retrieval.rag import JURISDICTION_MAP, TXT_DIR
 
-# --- ground truth and join table ---------------------------------------------
+_DATA = Path(TXT_DIR).parent
+_RAW_DIR = _DATA / "raw"
 
-_TXT_STEMS = sorted(p.stem for p in Path(TXT_DIR).glob("*.txt"))
-
-# (stem, ISO code, label) for every corpus file, including the MBO
-_ALL = sorted(
-    (stem, meta["code"], meta["label"]) for stem, meta in JURISDICTION_MAP.items()
-)
-# the 16 Bundesländer only
-_STATES = [row for row in _ALL if row[1] != "DE-MBO"]
-
-_STEM_BY_CODE = {code: stem for stem, code, _ in _ALL}
-_REGISTRY_BY_CODE = {cfg["jurisdiction"]: cfg for cfg in _STATE_REGISTRY}
+_ALL = [pytest.param(j, id=j.label) for j in JURISDICTIONS]
+_STATE_PARAMS = [pytest.param(j, id=j.label) for j in STATES]
 
 
-def _ids(rows):
-    return [label for _, _, label in rows]
+# --- registry against the files on disk --------------------------------------
 
 
-# --- 0. ground truth ---------------------------------------------------------
+def test_registry_has_16_states_and_the_mbo():
+    assert len(JURISDICTIONS) == 17
+    assert len(STATES) == 16
+    assert [j.code for j in JURISDICTIONS if not j.is_state] == ["DE-MBO"]
 
 
-def test_corpus_has_17_files():
-    """16 Bundesländer plus the MBO. Guards against an empty or partial checkout."""
-    assert len(_TXT_STEMS) == 17, _TXT_STEMS
+def test_registry_keys_are_unique():
+    for field in ("stem", "code", "label"):
+        values = [getattr(j, field) for j in JURISDICTIONS]
+        assert len(set(values)) == len(values), f"duplicate {field}: {values}"
 
 
-# --- 1. JURISDICTION_MAP (rag.py) --------------------------------------------
+def test_registry_lookups_round_trip():
+    for j in JURISDICTIONS:
+        assert by_stem(j.stem) is j
+        assert by_code(j.code) is j
+        assert by_label(j.label) is j
 
 
-def test_jurisdiction_map_matches_corpus_files():
-    """Every txt file is mapped, and every mapped stem exists on disk."""
-    assert sorted(JURISDICTION_MAP) == _TXT_STEMS
+def test_registry_matches_txt_files():
+    """Every txt file has a registry entry, and every entry has a txt file."""
+    on_disk = sorted(p.stem for p in Path(TXT_DIR).glob("*.txt"))
+    assert on_disk == sorted(j.stem for j in JURISDICTIONS)
 
 
-def test_jurisdiction_map_codes_and_labels_are_unique():
-    codes = [code for _, code, _ in _ALL]
-    labels = [label for _, _, label in _ALL]
-    assert len(set(codes)) == len(codes), codes
-    assert len(set(labels)) == len(labels), labels
+def test_raw_pdfs_are_named_after_their_stem():
+    """data/raw/<stem>.pdf for every entry, and no other PDF in data/raw.
+
+    The extension is compared case-insensitively: MBO.PDF keeps its upper-case
+    extension, because a case-only rename fails on Windows file systems.
+    """
+    on_disk = sorted(p.stem + ".pdf" for p in _RAW_DIR.iterdir() if p.suffix.lower() == ".pdf")
+    assert on_disk == sorted(f"{j.stem}.pdf" for j in JURISDICTIONS)
 
 
-# --- 2. _STATE_REGISTRY (build_graph.py) -------------------------------------
+@pytest.mark.parametrize("j", _STATE_PARAMS)
+def test_state_has_fine_inventory(j):
+    assert (_INVENTORY_DIR / f"{j.stem}_node_inventory_fine.md").is_file()
 
 
-def test_registry_covers_all_16_states():
-    """The KG registry holds exactly the 16 Bundesländer (no MBO)."""
-    codes = sorted(cfg["jurisdiction"] for cfg in _STATE_REGISTRY)
-    assert len(codes) == 16, codes
-    assert len(set(codes)) == 16, "duplicate jurisdiction in _STATE_REGISTRY"
-    assert codes == sorted(code for _, code, _ in _STATES)
+# --- rag.JURISDICTION_MAP ----------------------------------------------------
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _STATES, ids=_ids(_STATES))
-def test_registry_entry_matches_corpus_stem(stem: str, code: str, label: str):
-    """name, prefix, source_suffix and inventory all derive from the same stem."""
-    cfg = _REGISTRY_BY_CODE[code]
-    assert cfg["name"] == stem, f"{label}: registry name '{cfg['name']}' != stem '{stem}'"
-    assert cfg["prefix"] == f"{stem}_", f"{label}: prefix '{cfg['prefix']}'"
-    assert cfg["source_suffix"] == stem, f"{label}: source_suffix '{cfg['source_suffix']}'"
-    assert cfg["inventory"] == f"{stem}_node_inventory_fine.md", f"{label}: inventory '{cfg['inventory']}'"
-    assert (_INVENTORY_DIR / cfg["inventory"]).is_file(), f"{label}: inventory file missing"
+def test_rag_jurisdiction_map_is_derived():
+    assert JURISDICTION_MAP == {j.stem: {"code": j.code, "label": j.label} for j in JURISDICTIONS}
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _STATES, ids=_ids(_STATES))
-def test_faiss_stem_and_kg_prefix_yield_same_node_id(stem: str, code: str, label: str):
+# --- build_graph._STATE_REGISTRY ---------------------------------------------
+
+
+def test_build_graph_registry_is_derived_and_ordered():
+    assert [cfg["name"] for cfg in _STATE_REGISTRY] == [j.stem for j in STATES]
+
+
+@pytest.mark.parametrize("j", _STATE_PARAMS)
+def test_build_graph_registry_entry(j):
+    cfg = next(c for c in _STATE_REGISTRY if c["name"] == j.stem)
+    assert cfg == {
+        "name": j.stem,
+        "full_name": j.full_name,
+        "inventory": f"{j.stem}_node_inventory_fine.md",
+        "prefix": f"{j.stem}_",
+        "source_suffix": j.stem,
+        "jurisdiction": j.code,
+    }
+
+
+@pytest.mark.parametrize("j", _STATE_PARAMS)
+def test_faiss_stem_and_kg_prefix_yield_same_node_id(j):
     """What GraphRAG derives at query time must equal what build_graph names the node."""
-    cfg = _REGISTRY_BY_CODE[code]
-    derived = _chunk_to_node_id({"source_file": stem, "source_paragraph": "§ 1 Anwendungsbereich"})
-    expected = f"{cfg['prefix']}§1"
-    assert derived == expected, (
-        f"{label} ({code}): FAISS stem '{stem}' derives '{derived}', "
-        f"KG prefix '{cfg['prefix']}' gives '{expected}'. GraphRAG misses this state."
+    cfg = next(c for c in _STATE_REGISTRY if c["name"] == j.stem)
+    derived = _chunk_to_node_id({"source_file": j.stem, "source_paragraph": "§ 1 Anwendungsbereich"})
+    assert derived == f"{cfg['prefix']}§1", (
+        f"{j.label}: FAISS stem '{j.stem}' derives '{derived}', "
+        f"KG prefix '{cfg['prefix']}'. GraphRAG misses this state."
     )
 
 
-# --- 3. and 4. _CORPUS_MAP (judge_runner.py) ---------------------------------
+# --- judge_runner._CORPUS_MAP ------------------------------------------------
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _ALL, ids=_ids(_ALL))
-def test_corpus_map_iso_key(stem: str, code: str, label: str):
-    assert _CORPUS_MAP.get(code) == stem, f"{label}: _CORPUS_MAP['{code}'] = {_CORPUS_MAP.get(code)!r}"
+def test_judge_corpus_map_is_derived():
+    expected = {j.code: j.stem for j in JURISDICTIONS} | {j.label: j.stem for j in JURISDICTIONS}
+    assert expected == _CORPUS_MAP
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _ALL, ids=_ids(_ALL))
-def test_corpus_map_label_key(stem: str, code: str, label: str):
-    assert _CORPUS_MAP.get(label) == stem, f"_CORPUS_MAP['{label}'] = {_CORPUS_MAP.get(label)!r}"
+# --- bulk_inventory.jurisdiction_from_filename -------------------------------
 
 
-def test_corpus_map_has_no_stale_keys():
-    """No entry for a state or stem that no longer exists."""
-    expected_keys = {code for _, code, _ in _ALL} | {label for _, _, label in _ALL}
-    assert set(_CORPUS_MAP) == expected_keys, set(_CORPUS_MAP) ^ expected_keys
-    assert set(_CORPUS_MAP.values()) == set(_TXT_STEMS)
+@pytest.mark.parametrize("j", _ALL)
+def test_bulk_inventory_jurisdiction_from_filename(j):
+    assert jurisdiction_from_filename(f"{j.stem}.txt") == j.code
 
 
-# --- 5. jurisdiction_from_filename (bulk_inventory.py) -----------------------
+def test_bulk_inventory_unknown_stem_falls_back_to_upper():
+    assert jurisdiction_from_filename("Unknown_Law.txt") == "UNKNOWN_LAW"
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _ALL, ids=_ids(_ALL))
-def test_jurisdiction_from_filename(stem: str, code: str, label: str):
-    got = jurisdiction_from_filename(f"{stem}.txt")
-    assert got == code, f"{label}: jurisdiction_from_filename('{stem}.txt') = '{got}', expected '{code}'"
+# --- generate_lbo_inventory._STATE_CONFIGS -----------------------------------
 
 
-# --- 6. audit_extraction_artifacts.py ----------------------------------------
+def test_generate_lbo_inventory_configs_are_derived():
+    expected = {
+        j.stem: {
+            "full_name": j.full_name,
+            "jurisdiction": j.code,
+            "source_suffix": j.stem,
+            "header_type": j.header_type,
+        }
+        for j in JURISDICTIONS
+        if j.header_type is not None
+    }
+    assert expected == _STATE_CONFIGS
+    assert len(_STATE_CONFIGS) == 13
+
+
+# --- bulk_extract.PDFS -------------------------------------------------------
+
+
+def test_bulk_extract_pdfs_are_derived():
+    assert PDFS == [f"{j.stem}.pdf" for j in JURISDICTIONS if j.extract_from_pdf]
+    assert all((_RAW_DIR / name).is_file() for name in PDFS)
+
+
+def test_bulk_extract_writes_txt_files_the_registry_knows():
+    """bulk_extract names each txt after its PDF; that stem must be a registry stem."""
+    for name in PDFS:
+        by_stem(Path(name).stem)
+
+
+# --- audit_extraction_artifacts.py -------------------------------------------
 
 
 def test_audit_discovers_exactly_the_16_states():
-    """discover_states() reads inventory file names; they must match the corpus stems."""
-    assert discover_states() == sorted(stem for stem, _, _ in _STATES)
+    assert discover_states() == sorted(j.stem for j in STATES)
 
 
-@pytest.mark.parametrize(("stem", "code", "label"), _STATES, ids=_ids(_STATES))
-def test_audit_resolves_the_corpus_file(stem: str, code: str, label: str):
-    txt_name = _TXT_PATH_OVERRIDES.get(stem, f"{stem}.txt")
-    assert Path(txt_name).stem == stem, f"{label}: audit override points to '{txt_name}'"
-    assert (_TXT_DIR / txt_name).is_file(), f"{label}: audit would read missing file '{txt_name}'"
+@pytest.mark.parametrize("j", _STATE_PARAMS)
+def test_audit_resolves_the_corpus_file(j):
+    txt_name = _TXT_PATH_OVERRIDES.get(j.stem, f"{j.stem}.txt")
+    assert Path(txt_name).stem == j.stem, f"{j.label}: audit override points to '{txt_name}'"
+    assert (_TXT_DIR / txt_name).is_file()
