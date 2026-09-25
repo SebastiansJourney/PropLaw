@@ -8,12 +8,12 @@ Three responsibilities:
                  IndexFlatIP index and persist it to propra/retrieval/.
   3. Retrieval — embed a query, return top-k chunks with metadata.
 
-Usage (CLI):
-    python rag.py build          # chunk all txt/ files, embed, save index
-    python rag.py query "..."    # query the saved index
+Usage (CLI, from the repo root):
+    python -m propra.retrieval.rag build          # chunk all txt/ files, embed, save index
+    python -m propra.retrieval.rag query "..."    # query the saved index
 
 Usage (import):
-    from rag import retriever
+    from propra.retrieval.rag import retriever
     results = retriever.retrieve("Abstandsfläche Bayern", k=5)
 """
 
@@ -25,6 +25,8 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from propra.jurisdictions import JURISDICTIONS
 
 if TYPE_CHECKING:
     import faiss as _faiss_mod
@@ -51,27 +53,12 @@ CHUNK_MIN_CHARS = 80          # skip stubs shorter than this
 CHUNK_MAX_CHARS = 1200        # hard cap — split overlength paragraphs
 
 # ---------------------------------------------------------------------------
-# Jurisdiction map — filename stem -> ISO 3166-2 code + human label
+# Jurisdiction map — filename stem -> ISO 3166-2 code + human label.
+# Derived from propra/jurisdictions.py, the single source of truth (F010).
 # ---------------------------------------------------------------------------
 
 JURISDICTION_MAP: dict[str, dict] = {
-    "BauO_BE":   {"code": "DE-BE", "label": "Berlin"},
-    "BauO_HE":   {"code": "DE-HE", "label": "Hessen"},
-    "BauO_LSA":  {"code": "DE-ST", "label": "Sachsen-Anhalt"},
-    "BauO_MV":   {"code": "DE-MV", "label": "Mecklenburg-Vorpommern"},
-    "BauO_NRW":  {"code": "DE-NW", "label": "Nordrhein-Westfalen"},
-    "BayBO":     {"code": "DE-BY", "label": "Bayern"},
-    "BbgBO":     {"code": "DE-BB", "label": "Brandenburg"},
-    "HBauO":     {"code": "DE-HH", "label": "Hamburg"},
-    "BremLBO":   {"code": "DE-HB", "label": "Bremen"},
-    "LBO_SH":    {"code": "DE-SH", "label": "Schleswig-Holstein"},
-    "LBO_SL":    {"code": "DE-SL", "label": "Saarland"},
-    "LBauO_RLP": {"code": "DE-RP", "label": "Rheinland-Pfalz"},
-    "MBO":       {"code": "DE-MBO", "label": "Musterbauordnung"},
-    "NBauO":     {"code": "DE-NI", "label": "Niedersachsen"},
-    "SaechsBO":  {"code": "DE-SN", "label": "Sachsen"},
-    "ThuerBO":   {"code": "DE-TH", "label": "Thüringen"},
-    "BW_LBO":    {"code": "DE-BW", "label": "Baden-Württemberg"},
+    j.stem: {"code": j.code, "label": j.label} for j in JURISDICTIONS
 }
 
 # ---------------------------------------------------------------------------
