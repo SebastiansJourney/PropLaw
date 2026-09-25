@@ -241,7 +241,15 @@ Evidence: with VIRTUAL\_ENV set and .venv/Scripts not on PATH (the
 nothing, 213 passed. Same without VIRTUAL\_ENV. With VIRTUAL\_ENV
 pointing to another venv it warns and uses .venv. The guard rejects the
 global pyenv Python and accepts .venv. A run from a fresh venv is not
-possible on the development machine (F016).
+possible on the development machine (F016); it was done in a fresh
+Linux clone instead, see Progress.
+**Progress:**
+- 2026-09-25 · a0644d6 · Fresh Linux clone, no venv, VIRTUAL\_ENV unset,
+  run by Sebastian: created .venv with Python 3.12.3, installed pytest,
+  pytest-asyncio, fastapi, pydantic, httpx, networkx, joblib, anthropic,
+  openai, python-dotenv and ruff==0.15.7; 213 passed, app imports, ruff
+  0.15.7 clean, "All green". A second run reported "All present
+  (ruff==0.15.7)" without installing.
 **Owner:** Sebastian
 
 ### F010 — State-to-corpus-filename mapping hardcoded in six places

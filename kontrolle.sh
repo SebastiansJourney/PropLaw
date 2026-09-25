@@ -146,9 +146,10 @@ fi
 echo
 
 # ── [3/3] Linter — comparison, not a gate ────────────────────────────
-# `ruff check .` as a yes/no gate does not fit here: ~2,980 findings come
-# from the generated *_section_edges.py, i.e. from data, not code
-# (TD-01). What counts: did this change introduce NEW findings?
+# Only counts findings against main and never fails the run. CI gates on
+# a plain `ruff check .` (pyproject.toml already excludes the generated
+# *_section_edges.py), so "All green" here does not guarantee a green
+# lint step in CI. Run `ruff check .` before pushing (F017).
 echo "  [3/3] Linter — comparison against main"
 EXC='propra/graph/*_section_edges.py'
 count(){ "$PY" -m ruff check . --exclude "$EXC" --output-format=concise 2>/dev/null | grep -c ':' ; }
