@@ -15,6 +15,12 @@ belongs to which jurisdiction. These tests check two things:
    - ``PDFS``                        propra/data/bulk_extract.py
    - ``_TXT_PATH_OVERRIDES`` and ``discover_states``
                                      propra/data/audit_extraction_artifacts.py
+   - ``EXPECTED_STATES``             propra/eval/graph_spot_check.py
+   - ``_full_lbo_name``              propra/data/draft_inventory.py
+   - ``GERMAN_STATES``               propra/schemas/situation.py
+
+Per-state lists that are not mappings (audit thresholds, one-off script
+subsets) may stay hand-written, but their keys must be registry stems.
 
 Why it matters: GraphRAG derives a KG node ID from FAISS chunk metadata
 (``f"{source_file}_§{section}"``). If one mapping drifts, lookups for that
@@ -38,11 +44,16 @@ from propra.data.audit_extraction_artifacts import (
 )
 from propra.data.bulk_extract import PDFS
 from propra.data.bulk_inventory import jurisdiction_from_filename
+from propra.data.draft_inventory import _full_lbo_name
+from propra.data.fix_flat_inventories import STATES as FIX_FLAT_STATES
 from propra.data.generate_lbo_inventory import _STATE_CONFIGS
 from propra.graph.build_graph import _STATE_REGISTRY
+from propra.eval.graph_spot_check import EXPECTED_STATES
+from propra.eval.kg_audit import _EXPECTED_ANCHORS
 from propra.graph.kg_retriever import _chunk_to_node_id
 from propra.jurisdictions import JURISDICTIONS, STATES, by_code, by_label, by_stem
 from propra.retrieval.rag import JURISDICTION_MAP, TXT_DIR
+from propra.schemas.situation import GERMAN_STATES
 
 _DATA = Path(TXT_DIR).parent
 _RAW_DIR = _DATA / "raw"
@@ -196,3 +207,31 @@ def test_audit_resolves_the_corpus_file(j):
     txt_name = _TXT_PATH_OVERRIDES.get(j.stem, f"{j.stem}.txt")
     assert Path(txt_name).stem == j.stem, f"{j.label}: audit override points to '{txt_name}'"
     assert (_TXT_DIR / txt_name).is_file()
+
+
+# --- further consumers found in the PR #7 review ------------------------------
+
+
+def test_graph_spot_check_expected_states_are_derived():
+    assert sorted(EXPECTED_STATES) == sorted(j.stem for j in STATES)
+
+
+@pytest.mark.parametrize("j", _ALL)
+def test_draft_inventory_law_name(j):
+    assert _full_lbo_name(j.stem) == j.full_name
+
+
+def test_situation_german_states_are_derived():
+    assert sorted(j.label for j in STATES) == GERMAN_STATES
+
+
+# --- hand-written per-state lists: keys must be registry stems ---------------
+
+
+def test_kg_audit_anchor_keys_are_registry_stems():
+    """Thresholds per law; BW_LBO and BremLBO have none yet (see F010)."""
+    assert set(_EXPECTED_ANCHORS) <= {j.stem for j in STATES}
+
+
+def test_fix_flat_inventories_states_are_registry_stems():
+    assert set(FIX_FLAT_STATES) <= {j.stem for j in STATES}

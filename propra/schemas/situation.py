@@ -4,24 +4,10 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-GERMAN_STATES = [
-    "Baden-Württemberg",
-    "Bayern",
-    "Berlin",
-    "Brandenburg",
-    "Bremen",
-    "Hamburg",
-    "Hessen",
-    "Mecklenburg-Vorpommern",
-    "Niedersachsen",
-    "Nordrhein-Westfalen",
-    "Rheinland-Pfalz",
-    "Saarland",
-    "Sachsen",
-    "Sachsen-Anhalt",
-    "Schleswig-Holstein",
-    "Thüringen",
-]
+from propra.jurisdictions import STATES
+
+# Derived from propra/jurisdictions.py (single source of truth, F010).
+GERMAN_STATES = sorted(j.label for j in STATES)
 
 
 class Situation(BaseModel):

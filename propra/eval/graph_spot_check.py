@@ -14,6 +14,8 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from propra.jurisdictions import STATES
+
 GRAPH_PATH = Path(__file__).parent.parent / "data" / "graph.pkl"
 
 # Well-known section → expected node type mapping (holds across all LBOs,
@@ -35,11 +37,8 @@ NOISE_PATTERNS = [
     re.compile(r"^\w{3,30}\s+\d{2}\.\d{2}\.\d{4}\s*$"),  # title-only
 ]
 
-EXPECTED_STATES = [
-    "BauO_BE", "BauO_HE", "BauO_LSA", "BauO_MV", "BauO_NRW",
-    "BayBO", "BbgBO", "BremLBO", "BW_LBO", "HBauO", "LBO_SH", "LBO_SL",
-    "LBauO_RLP", "NBauO", "SaechsBO", "ThuerBO",
-]
+# Derived from propra/jurisdictions.py (single source of truth, F010).
+EXPECTED_STATES = sorted((j.stem for j in STATES), key=str.lower)
 
 
 def load_graph():

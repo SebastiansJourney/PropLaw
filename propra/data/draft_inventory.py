@@ -43,6 +43,7 @@ except ImportError:
 # Import node types from schema
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from propra.graph.schema import NODE_TYPES
+from propra.jurisdictions import by_stem
 
 load_dotenv()
 sys.stdout.reconfigure(encoding='utf-8')
@@ -300,26 +301,14 @@ def build_inventory_md(
 
 
 def _full_lbo_name(lbo_code: str) -> str:
-    names = {
-        "BayBO": "Bayerische Bauordnung (BayBO)",
-        "LBO_BW": "Landesbauordnung Baden-Württemberg (LBO)",
-        "BauO_Bln": "Bauordnung für Berlin (BauO Bln)",
-        "BbgBO": "Brandenburgische Bauordnung (BbgBO)",
-        "BremLBO": "Bremische Landesbauordnung (BremLBO)",
-        "HBauO": "Hamburgische Bauordnung (HBauO)",
-        "HBO": "Hessische Bauordnung (HBO)",
-        "LBauO_MV": "Landesbauordnung Mecklenburg-Vorpommern (LBauO M-V)",
-        "NBauO": "Niedersächsische Bauordnung (NBauO)",
-        "BauO_NRW": "Bauordnung Nordrhein-Westfalen (BauO NRW)",
-        "LBauO_RLP": "Landesbauordnung Rheinland-Pfalz (LBauO RLP)",
-        "LBO_SL": "Landesbauordnung Saarland (LBO)",
-        "SaechsBO": "Sächsische Bauordnung (SächsBO)",
-        "BauO_LSA": "Bauordnung des Landes Sachsen-Anhalt (BauO LSA)",
-        "LBO_SH": "Landesbauordnung Schleswig-Holstein (LBO)",
-        "ThürBO": "Thüringer Bauordnung (ThürBO)",
-        "MBO": "Musterbauordnung (MBO)",
-    }
-    return names.get(lbo_code, lbo_code)
+    """Law name for a corpus stem, from propra/jurisdictions.py (F010, F014).
+
+    Unknown codes fall back to the code itself, as before.
+    """
+    try:
+        return by_stem(lbo_code).full_name
+    except KeyError:
+        return lbo_code
 
 
 # ─── Main pipeline ─────────────────────────────────────────────────────────────

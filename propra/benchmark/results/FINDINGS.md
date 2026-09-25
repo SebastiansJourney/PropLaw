@@ -152,8 +152,11 @@ Berlin" vs "Bauordnung für das Land Berlin"), Mecklenburg-Vorpommern
 Bauordnung"), Schleswig-Holstein ("(LBO)" vs "(LBO SH)") and Saarland
 ("Landesbauordnung Saarland (LBO)" vs "Landesbauordnung des Saarlandes
 (LBO SL)"). propra/jurisdictions.py now uses the build\_graph.py values,
-because those are the ones in the knowledge graph. Neither set has been
-checked against the official titles.
+because those are the ones in the knowledge graph. A third set in
+data/draft\_inventory.py (\_full\_lbo\_name) had five stale keys and
+further variants, e.g. "Bauordnung Nordrhein-Westfalen" without "für das
+Land"; it now derives from the registry as well. None of the sets has
+been checked against the official titles.
 **Action:** Check all 16 full names against the title of each law in
 propra/data/raw/<stem>.pdf and correct them in propra/jurisdictions.py
 only. Rebuild the graph afterwards (law root nodes carry the name).
@@ -208,23 +211,31 @@ rename or new state carries the same silent-mismatch risk.
   next extraction run.
 **Resolution:** propra/jurisdictions.py is the single registry (stem,
 ISO code, label, full name, parser header type, PDF extraction flag),
-17 entries. All seven consumer modules derive from it and keep their
-public names; audit\_extraction\_artifacts.py holds no table of its own
-and is covered by the test. Raw PDFs renamed to their stem
+17 entries. Ten consumer modules derive from it and keep their public
+names; audit\_extraction\_artifacts.py holds no table of its own and is
+covered by the test. Three of the ten were missed in the first version
+of PR #7 and found by the qa-reviewer: EXPECTED\_STATES in
+eval/graph\_spot\_check.py, \_full\_lbo\_name in data/draft\_inventory.py
+(five stale keys, so five states silently got the raw code instead of
+the law name) and GERMAN\_STATES in schemas/situation.py. Raw PDFs renamed to their stem
 (LBO\_HB.pdf -> BremLBO.pdf, BauO\_BW.pdf -> BW\_LBO.pdf). MBO.PDF
 keeps its upper-case extension: a case-only rename fails on Windows, and
 no script reads the MBO PDF. Scripts that now import from the package are run
 with `python -m` from the repo root; docs updated accordingly.
 Evidence: test\_prefix\_alignment.py asserts that every consumer equals
-what the registry produces (94 tests green; a wrong registry entry turns
-6 red, a hand-written extra entry in \_CORPUS\_MAP turns 1 red). The
-knowledge graph built before and after the refactor is identical:
+what the registry produces (115 tests green; a wrong registry entry
+turns 6 red, a hand-written extra entry in \_CORPUS\_MAP turns 1 red).
+The knowledge graph built before and after the refactor is identical:
 18,382 nodes, 34,795 edges, same IDs and attributes. Full test suite:
-all green, 203 before and 192 after (the rewritten alignment test has
-11 fewer cases).
-**Observation (not in scope):** parse\_inventory.py and builder.py still
-default to "DE-BW" from the early single-state phase. These are
-defaults, not state-to-file mappings.
+all green, 203 before and 213 after.
+**Observation (not in scope):** Hand-written per-state lists that are
+not mappings remain: \_EXPECTED\_ANCHORS in eval/kg\_audit.py (minimum
+section anchors per law; BW\_LBO and BremLBO have no threshold yet, so
+the audit skips them), STATES in data/fix\_flat\_inventories.py (subset
+for a one-off script) and the per-state trim rules in
+generate\_lbo\_inventory.py. The test checks that the keys of the first
+two are registry stems. parse\_inventory.py and builder.py still default
+to "DE-BW" from the early single-state phase.
 **Owner:** Sebastian
 
 \---
