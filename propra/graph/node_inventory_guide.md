@@ -41,8 +41,8 @@ The draft is generated using the Anthropic API to classify each provision. It is
 
 Run bulk extraction and drafting:
 ```bash
-python propra/data/bulk_extract.py
-python propra/data/bulk_inventory.py
+python -m propra.data.bulk_extract
+python -m propra.data.bulk_inventory
 ```
 
 ---

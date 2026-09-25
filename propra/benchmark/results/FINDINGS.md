@@ -101,46 +101,6 @@ before KG enrichment is fully active.
 
 \---
 
-### F010 — State-to-corpus-filename mapping hardcoded in six places
-
-**Date:** 2026-09-19
-**Status:** OPEN — refactor required
-**Reviewed:** 2026-09-19
-**Finding:** The mapping Bundesland -> corpus file stem is maintained
-independently in six places: JURISDICTION\_MAP in retrieval/rag.py,
-\_STATE\_REGISTRY in graph/build\_graph.py, \_CORPUS\_MAP in
-benchmark/judge\_runner.py (both the ISO-code and the plain-label
-variant), jurisdiction\_from\_filename in data/bulk\_inventory.py, and
-data/audit\_extraction\_artifacts.py together with its test. Any rename
-must be applied to all six by hand; F009 is what happens when one of
-them drifts. This is the same class of defect as F003 (FAISS metadata
-and KG attributes agreeing only by convention, with no single source of
-truth). test\_prefix\_alignment.py covers only the first two.
-**Action:** Introduce one canonical registry (stem, ISO code, label,
-KG prefix) and derive the other five from it. The finding stays OPEN
-until this refactor is merged; a test alone does not close it.
-**Impact:** Root cause of F009. Until fixed, every future corpus
-rename or new state carries the same silent-mismatch risk.
-**Progress:**
-- 2026-09-19 · fdb9702 · BW and HB prefixes aligned by hand in all six
-  places (F009).
-- 2026-09-19 · test\_prefix\_alignment.py added; asserts only
-  JURISDICTION\_MAP and \_STATE\_REGISTRY (2 of 6).
-- 2026-09-23 · Extension of the test to all six sources was written in a
-  cloud session (local hash e8f6d4b) but never reached GitHub; lost with
-  `git reset --hard origin/main`. Evidence: commit not in the fork,
-  test file on main still imports only the two maps. Still 2 of 6.
-- 2026-09-25 · test\_prefix\_alignment.py rewritten: imports all six
-  sources and checks them against the txt files on disk (105 tests).
-  Counter-check: one wrong entry each in judge\_runner.py,
-  bulk\_inventory.py and audit\_extraction\_artifacts.py -> 4 failed.
-  openai added to requirements.txt (judge\_runner.py imports it; it was
-  missing, so a fresh environment could not import the judge). 6 of 6
-  covered; the refactor is still open.
-**Owner:** Sebastian
-
-\---
-
 ### F011 — ruff version drift: local 0.16.6, CI 0.15.7
 
 **Date:** 2026-09-19
@@ -180,7 +140,108 @@ invisible until the pin is bumped.
 
 \---
 
+### F014 — Official law names differ between modules and are unverified
+
+**Date:** 2026-09-25
+**Status:** OPEN — needs a check against the legal texts
+**Reviewed:** 2026-09-25
+**Finding:** Before F010, build\_graph.py and generate\_lbo\_inventory.py
+carried different full names for five laws: Berlin ("Bauordnung für
+Berlin" vs "Bauordnung für das Land Berlin"), Mecklenburg-Vorpommern
+("LBauO M-V" vs "LBauO MV"), Hamburg ("Hamburgische" vs "Hamburger
+Bauordnung"), Schleswig-Holstein ("(LBO)" vs "(LBO SH)") and Saarland
+("Landesbauordnung Saarland (LBO)" vs "Landesbauordnung des Saarlandes
+(LBO SL)"). propra/jurisdictions.py now uses the build\_graph.py values,
+because those are the ones in the knowledge graph. A third set in
+data/draft\_inventory.py (\_full\_lbo\_name) had five stale keys and
+further variants, e.g. "Bauordnung Nordrhein-Westfalen" without "für das
+Land"; it now derives from the registry as well. None of the sets has
+been checked against the official titles.
+**Action:** Check all 16 full names against the title of each law in
+propra/data/raw/<stem>.pdf and correct them in propra/jurisdictions.py
+only. Rebuild the graph afterwards (law root nodes carry the name).
+**Impact:** The name reaches users as regulation\_name in cited sources.
+A wrong law title undermines trust in an otherwise correct citation.
+**Owner:** Sebastian (legal-qa)
+
+\---
+
 ## Closed Findings
+
+### F010 — State-to-corpus-filename mapping hardcoded in six places
+
+**Date:** 2026-09-19
+**Status:** CLOSED — resolved 2026-09-25
+**Reviewed:** 2026-09-19
+**Finding:** The mapping Bundesland -> corpus file stem is maintained
+independently in six places: JURISDICTION\_MAP in retrieval/rag.py,
+\_STATE\_REGISTRY in graph/build\_graph.py, \_CORPUS\_MAP in
+benchmark/judge\_runner.py (both the ISO-code and the plain-label
+variant), jurisdiction\_from\_filename in data/bulk\_inventory.py, and
+data/audit\_extraction\_artifacts.py together with its test. Any rename
+must be applied to all six by hand; F009 is what happens when one of
+them drifts. This is the same class of defect as F003 (FAISS metadata
+and KG attributes agreeing only by convention, with no single source of
+truth). test\_prefix\_alignment.py covers only the first two.
+**Action:** Introduce one canonical registry (stem, ISO code, label,
+KG prefix) and derive the other five from it. The finding stays OPEN
+until this refactor is merged; a test alone does not close it.
+**Impact:** Root cause of F009. Until fixed, every future corpus
+rename or new state carries the same silent-mismatch risk.
+**Progress:**
+- 2026-09-19 · fdb9702 · BW and HB prefixes aligned by hand in all six
+  places (F009).
+- 2026-09-19 · test\_prefix\_alignment.py added; asserts only
+  JURISDICTION\_MAP and \_STATE\_REGISTRY (2 of 6).
+- 2026-09-23 · Extension of the test to all six sources was written in a
+  cloud session (local hash e8f6d4b) but never reached GitHub; lost with
+  `git reset --hard origin/main`. Evidence: commit not in the fork,
+  test file on main still imports only the two maps. Still 2 of 6.
+- 2026-09-25 · test\_prefix\_alignment.py rewritten: imports all six
+  sources and checks them against the txt files on disk (105 tests).
+  Counter-check: one wrong entry each in judge\_runner.py,
+  bulk\_inventory.py and audit\_extraction\_artifacts.py -> 4 failed.
+  openai added to requirements.txt (judge\_runner.py imports it; it was
+  missing, so a fresh environment could not import the judge). 6 of 6
+  covered; the refactor is still open.
+- 2026-09-25 · Refactor: two more places found while preparing it,
+  eight at that point (three more followed in review, see Resolution): \_STATE\_CONFIGS in data/generate\_lbo\_inventory.py
+  (13 states, parser config) and PDFS in data/bulk\_extract.py, which
+  still listed LBO\_HB.pdf and would have recreated LBO\_HB.txt on the
+  next extraction run.
+**Resolution:** propra/jurisdictions.py is the single registry (stem,
+ISO code, label, full name, parser header type, PDF extraction flag),
+17 entries. Nine consumer modules derive from it and keep their public
+names; audit\_extraction\_artifacts.py holds no table of its own and is
+covered by the test. Three of the nine were missed in the first version
+of PR #7 and found by the qa-reviewer: EXPECTED\_STATES in
+eval/graph\_spot\_check.py, \_full\_lbo\_name in data/draft\_inventory.py
+(five stale keys, so five states silently got the raw code instead of
+the law name) and GERMAN\_STATES in schemas/situation.py. Raw PDFs renamed to their stem
+(LBO\_HB.pdf -> BremLBO.pdf, BauO\_BW.pdf -> BW\_LBO.pdf). MBO.PDF
+keeps its upper-case extension: a case-only rename fails on Windows, and
+no script reads the MBO PDF. Scripts that now import from the package are run
+with `python -m` from the repo root; docs updated accordingly.
+Evidence: test\_prefix\_alignment.py asserts that every consumer equals
+what the registry produces (115 tests green; a wrong registry entry
+turns 6 red, a hand-written extra entry in \_CORPUS\_MAP turns 1 red).
+The knowledge graph built before and after the refactor is identical:
+18,382 nodes, 34,795 edges, same IDs and attributes. Full test suite:
+all green, 203 before and 213 after.
+**Observation (not in scope):** Hand-written per-state lists that are
+not mappings remain: \_EXPECTED\_ANCHORS in eval/kg\_audit.py (minimum
+section anchors per law; BW\_LBO and BremLBO have no threshold yet, so
+the audit skips them), STATES in data/fix\_flat\_inventories.py (subset
+for a one-off script) and the per-state trim rules in
+generate\_lbo\_inventory.py. The test checks that the keys of the first
+two are registry stems. parse\_inventory.py and builder.py still default
+to "DE-BW" from the early single-state phase. BUNDESLAENDER in
+propra/frontend/src/pages/AdvisorPage.tsx is a hand-written list of
+state labels in the frontend, which cannot import the Python registry;
+no test binds it to the registry labels.
+**Owner:** Sebastian
+
+\---
 
 ### F013 — Backend URL hardcoded in the frontend
 

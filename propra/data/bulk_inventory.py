@@ -9,10 +9,10 @@ type UNKNOWN for manual review.
 
 Usage:
     # Single file
-    python bulk_inventory.py txt/BauO_BE.txt --out-dir node_inventory/
+    python -m propra.data.bulk_inventory propra/data/txt/BauO_BE.txt --out-dir "propra/data/node inventory"
 
     # Entire folder
-    python bulk_inventory.py txt/ --out-dir node_inventory/
+    python -m propra.data.bulk_inventory propra/data/txt/ --out-dir "propra/data/node inventory"
 
 Output:
     One .md file per .txt input, e.g. BauO_BE_node_inventory.md
@@ -22,6 +22,8 @@ Output:
 import re
 import sys
 from pathlib import Path
+
+from propra.jurisdictions import by_stem
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -353,28 +355,16 @@ def generate_inventory(txt_path: str, out_path: str, jurisdiction: str) -> dict:
 
 
 def jurisdiction_from_filename(name: str) -> str:
-    """Derive a jurisdiction label from filename."""
-    mapping = {
-        "BauO_BE":    "DE-BE",
-        "BauO_HE":    "DE-HE",
-        "BauO_LSA":   "DE-ST",
-        "BauO_MV":    "DE-MV",
-        "BauO_NRW":   "DE-NW",
-        "BayBO":      "DE-BY",
-        "BbgBO":      "DE-BB",
-        "HBauO":      "DE-HH",
-        "LBauO_RLP":  "DE-RP",
-        "BremLBO":    "DE-HB",
-        "LBO_SH":     "DE-SH",
-        "LBO_SL":     "DE-SL",
-        "MBO":        "DE-MBO",
-        "NBauO":      "DE-NI",
-        "SaechsBO":   "DE-SN",
-        "ThuerBO":    "DE-TH",
-        "BW_LBO":     "DE-BW",
-    }
+    """Derive the ISO jurisdiction code from a corpus filename.
+
+    Uses propra/jurisdictions.py (single source of truth, F010). Unknown stems
+    fall back to the upper-cased stem, as before.
+    """
     stem = Path(name).stem
-    return mapping.get(stem, stem.upper())
+    try:
+        return by_stem(stem).code
+    except KeyError:
+        return stem.upper()
 
 
 # ---------------------------------------------------------------------------

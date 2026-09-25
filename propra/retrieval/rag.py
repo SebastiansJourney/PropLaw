@@ -8,12 +8,12 @@ Three responsibilities:
                  IndexFlatIP index and persist it to propra/retrieval/.
   3. Retrieval — embed a query, return top-k chunks with metadata.
 
-Usage (CLI):
-    python rag.py build          # chunk all txt/ files, embed, save index
-    python rag.py query "..."    # query the saved index
+Usage (CLI, from the repo root):
+    python -m propra.retrieval.rag build          # chunk all txt/ files, embed, save index
+    python -m propra.retrieval.rag query "..."    # query the saved index
 
 Usage (import):
-    from rag import retriever
+    from propra.retrieval.rag import retriever
     results = retriever.retrieve("Abstandsfläche Bayern", k=5)
 """
 
@@ -25,6 +25,8 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from propra.jurisdictions import JURISDICTIONS
 
 if TYPE_CHECKING:
     import faiss as _faiss_mod
@@ -51,27 +53,12 @@ CHUNK_MIN_CHARS = 80          # skip stubs shorter than this
 CHUNK_MAX_CHARS = 1200        # hard cap — split overlength paragraphs
 
 # ---------------------------------------------------------------------------
-# Jurisdiction map — filename stem -> ISO 3166-2 code + human label
+# Jurisdiction map — filename stem -> ISO 3166-2 code + human label.
+# Derived from propra/jurisdictions.py, the single source of truth (F010).
 # ---------------------------------------------------------------------------
 
 JURISDICTION_MAP: dict[str, dict] = {
-    "BauO_BE":   {"code": "DE-BE", "label": "Berlin"},
-    "BauO_HE":   {"code": "DE-HE", "label": "Hessen"},
-    "BauO_LSA":  {"code": "DE-ST", "label": "Sachsen-Anhalt"},
-    "BauO_MV":   {"code": "DE-MV", "label": "Mecklenburg-Vorpommern"},
-    "BauO_NRW":  {"code": "DE-NW", "label": "Nordrhein-Westfalen"},
-    "BayBO":     {"code": "DE-BY", "label": "Bayern"},
-    "BbgBO":     {"code": "DE-BB", "label": "Brandenburg"},
-    "HBauO":     {"code": "DE-HH", "label": "Hamburg"},
-    "BremLBO":   {"code": "DE-HB", "label": "Bremen"},
-    "LBO_SH":    {"code": "DE-SH", "label": "Schleswig-Holstein"},
-    "LBO_SL":    {"code": "DE-SL", "label": "Saarland"},
-    "LBauO_RLP": {"code": "DE-RP", "label": "Rheinland-Pfalz"},
-    "MBO":       {"code": "DE-MBO", "label": "Musterbauordnung"},
-    "NBauO":     {"code": "DE-NI", "label": "Niedersachsen"},
-    "SaechsBO":  {"code": "DE-SN", "label": "Sachsen"},
-    "ThuerBO":   {"code": "DE-TH", "label": "Thüringen"},
-    "BW_LBO":    {"code": "DE-BW", "label": "Baden-Württemberg"},
+    j.stem: {"code": j.code, "label": j.label} for j in JURISDICTIONS
 }
 
 # ---------------------------------------------------------------------------
@@ -291,8 +278,8 @@ class _ChunkUnpickler(pickle.Unpickler):
     """
     Remaps __main__.Chunk → rag.Chunk.
 
-    chunks.pkl is built by running `python rag.py build` directly, which makes
-    rag.py the __main__ module. Python's pickle stores the dataclass as
+    chunks.pkl is built by running `python -m propra.retrieval.rag build`, which
+    makes rag.py the __main__ module. Python's pickle stores the dataclass as
     __main__.Chunk. When the index is loaded from main.py or uvicorn, __main__
     is no longer rag.py, so the default Unpickler raises
     "Can't get attribute 'Chunk'". This subclass redirects the lookup.
@@ -332,7 +319,7 @@ class Retriever:
         if not self._index_path.exists():
             raise FileNotFoundError(
                 f"FAISS index not found at {self._index_path}. "
-                "Run: python rag.py build"
+                "Run from the repo root: python -m propra.retrieval.rag build"
             )
         self._index = faiss.read_index(str(self._index_path))
         with open(self._chunks_path, "rb") as f:
@@ -400,7 +387,7 @@ class Retriever:
         return results
 
 
-# Singleton — import and use directly: from rag import retriever
+# Singleton — import and use directly: from propra.retrieval.rag import retriever
 retriever = Retriever()
 
 
@@ -425,7 +412,7 @@ def _cmd_query(query: str, k: int = 5, jurisdiction: str | None = None) -> None:
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args:
-        print("Usage: python rag.py build | python rag.py query <text> [k] [jurisdiction]")
+        print("Usage: python -m propra.retrieval.rag build | python -m propra.retrieval.rag query <text> [k] [jurisdiction]")
         sys.exit(1)
 
     cmd = args[0]
@@ -433,7 +420,7 @@ if __name__ == "__main__":
         _cmd_build()
     elif cmd == "query":
         if len(args) < 2:
-            print("Usage: python rag.py query <text> [k] [jurisdiction]")
+            print("Usage: python -m propra.retrieval.rag query <text> [k] [jurisdiction]")
             sys.exit(1)
         q = args[1]
         k_arg = int(args[2]) if len(args) > 2 else 5

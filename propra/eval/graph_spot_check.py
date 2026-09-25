@@ -7,12 +7,17 @@ Runs five quality checks against graph.pkl by sampling nodes per state:
   3. Supplements edges   — every state's §§ link back to the MBO counterpart via supplements
   4. Section coverage    — no gaps in section numbering per state
   5. Cross-state consistency — same topic nodes across states have consistent types
+
+Usage (from the repo root):
+    python -m propra.eval.graph_spot_check
 """
 
 import pickle
 import re
 from collections import defaultdict
 from pathlib import Path
+
+from propra.jurisdictions import STATES
 
 GRAPH_PATH = Path(__file__).parent.parent / "data" / "graph.pkl"
 
@@ -35,11 +40,8 @@ NOISE_PATTERNS = [
     re.compile(r"^\w{3,30}\s+\d{2}\.\d{2}\.\d{4}\s*$"),  # title-only
 ]
 
-EXPECTED_STATES = [
-    "BauO_BE", "BauO_HE", "BauO_LSA", "BauO_MV", "BauO_NRW",
-    "BayBO", "BbgBO", "BremLBO", "BW_LBO", "HBauO", "LBO_SH", "LBO_SL",
-    "LBauO_RLP", "NBauO", "SaechsBO", "ThuerBO",
-]
+# Derived from propra/jurisdictions.py (single source of truth, F010).
+EXPECTED_STATES = sorted((j.stem for j in STATES), key=str.lower)
 
 
 def load_graph():
