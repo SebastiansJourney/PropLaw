@@ -35,6 +35,7 @@ from propra.graph.schema import Node
 from propra.graph.state_mbo_edges import state_edges_from_mbo
 from propra.graph.state_structural_edges import state_structural_edges
 from propra.graph.visualize import export_graphml
+from propra.jurisdictions import STATES
 
 _DATA = Path(__file__).parent.parent / "data"
 _NODE_INVENTORY_DIR = "node inventory"
@@ -43,137 +44,19 @@ _MBO_INVENTORY = str(_DATA / _NODE_INVENTORY_DIR / "MBO_node_inventory.md")
 _GRAPH_PATH = str(_DATA / "graph.pkl")
 _GRAPHML_PATH = str(_DATA / "graph.graphml")
 
-# Registry of state LBOs to include in the graph.
-# To add a new state: append one entry here and drop the inventory file in propra/data/node inventory/.
+# Registry of state LBOs to include in the graph, derived from
+# propra/jurisdictions.py (single source of truth, F010). To add a state,
+# add it there and drop its inventory file in propra/data/node inventory/.
 _STATE_REGISTRY = [
     {
-        "name": "BbgBO",
-        "full_name": "Brandenburgische Bauordnung (BbgBO)",
-        "inventory": "BbgBO_node_inventory_fine.md",
-        "prefix": "BbgBO_",
-        "source_suffix": "BbgBO",
-        "jurisdiction": "DE-BB",
-    },
-    {
-        "name": "BayBO",
-        "full_name": "Bayerische Bauordnung (BayBO)",
-        "inventory": "BayBO_node_inventory_fine.md",
-        "prefix": "BayBO_",
-        "source_suffix": "BayBO",
-        "jurisdiction": "DE-BY",
-    },
-    {
-        "name": "NBauO",
-        "full_name": "Niedersächsische Bauordnung (NBauO)",
-        "inventory": "NBauO_node_inventory_fine.md",
-        "prefix": "NBauO_",
-        "source_suffix": "NBauO",
-        "jurisdiction": "DE-NI",
-    },
-    {
-        "name": "BauO_BE",
-        "full_name": "Bauordnung für Berlin (BauO BE)",
-        "inventory": "BauO_BE_node_inventory_fine.md",
-        "prefix": "BauO_BE_",
-        "source_suffix": "BauO_BE",
-        "jurisdiction": "DE-BE",
-    },
-    {
-        "name": "BauO_HE",
-        "full_name": "Hessische Bauordnung (HBO)",
-        "inventory": "BauO_HE_node_inventory_fine.md",
-        "prefix": "BauO_HE_",
-        "source_suffix": "BauO_HE",
-        "jurisdiction": "DE-HE",
-    },
-    {
-        "name": "BauO_NRW",
-        "full_name": "Bauordnung für das Land Nordrhein-Westfalen (BauO NRW)",
-        "inventory": "BauO_NRW_node_inventory_fine.md",
-        "prefix": "BauO_NRW_",
-        "source_suffix": "BauO_NRW",
-        "jurisdiction": "DE-NW",
-    },
-    {
-        "name": "BauO_LSA",
-        "full_name": "Bauordnung des Landes Sachsen-Anhalt (BauO LSA)",
-        "inventory": "BauO_LSA_node_inventory_fine.md",
-        "prefix": "BauO_LSA_",
-        "source_suffix": "BauO_LSA",
-        "jurisdiction": "DE-ST",
-    },
-    {
-        "name": "BauO_MV",
-        "full_name": "Landesbauordnung Mecklenburg-Vorpommern (LBauO M-V)",
-        "inventory": "BauO_MV_node_inventory_fine.md",
-        "prefix": "BauO_MV_",
-        "source_suffix": "BauO_MV",
-        "jurisdiction": "DE-MV",
-    },
-    {
-        "name": "HBauO",
-        "full_name": "Hamburgische Bauordnung (HBauO)",
-        "inventory": "HBauO_node_inventory_fine.md",
-        "prefix": "HBauO_",
-        "source_suffix": "HBauO",
-        "jurisdiction": "DE-HH",
-    },
-    {
-        "name": "LBO_SH",
-        "full_name": "Landesbauordnung Schleswig-Holstein (LBO)",
-        "inventory": "LBO_SH_node_inventory_fine.md",
-        "prefix": "LBO_SH_",
-        "source_suffix": "LBO_SH",
-        "jurisdiction": "DE-SH",
-    },
-    {
-        "name": "LBO_SL",
-        "full_name": "Landesbauordnung Saarland (LBO)",
-        "inventory": "LBO_SL_node_inventory_fine.md",
-        "prefix": "LBO_SL_",
-        "source_suffix": "LBO_SL",
-        "jurisdiction": "DE-SL",
-    },
-    {
-        "name": "LBauO_RLP",
-        "full_name": "Landesbauordnung Rheinland-Pfalz (LBauO RLP)",
-        "inventory": "LBauO_RLP_node_inventory_fine.md",
-        "prefix": "LBauO_RLP_",
-        "source_suffix": "LBauO_RLP",
-        "jurisdiction": "DE-RP",
-    },
-    {
-        "name": "SaechsBO",
-        "full_name": "Sächsische Bauordnung (SächsBO)",
-        "inventory": "SaechsBO_node_inventory_fine.md",
-        "prefix": "SaechsBO_",
-        "source_suffix": "SaechsBO",
-        "jurisdiction": "DE-SN",
-    },
-    {
-        "name": "ThuerBO",
-        "full_name": "Thüringer Bauordnung (ThürBO)",
-        "inventory": "ThuerBO_node_inventory_fine.md",
-        "prefix": "ThuerBO_",
-        "source_suffix": "ThuerBO",
-        "jurisdiction": "DE-TH",
-    },
-    {
-        "name": "BW_LBO",
-        "full_name": "Landesbauordnung für Baden-Württemberg (LBO BW)",
-        "inventory": "BW_LBO_node_inventory_fine.md",
-        "prefix": "BW_LBO_",
-        "source_suffix": "BW_LBO",
-        "jurisdiction": "DE-BW",
-    },
-    {
-        "name": "BremLBO",
-        "full_name": "Bremische Landesbauordnung (BremLBO)",
-        "inventory": "BremLBO_node_inventory_fine.md",
-        "prefix": "BremLBO_",
-        "source_suffix": "BremLBO",
-        "jurisdiction": "DE-HB",
-    },
+        "name": j.stem,
+        "full_name": j.full_name,
+        "inventory": f"{j.stem}_node_inventory_fine.md",
+        "prefix": f"{j.stem}_",
+        "source_suffix": j.stem,
+        "jurisdiction": j.code,
+    }
+    for j in STATES
 ]
 
 # Sections to include (add § numbers as we go)
