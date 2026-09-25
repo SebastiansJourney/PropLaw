@@ -278,8 +278,8 @@ class _ChunkUnpickler(pickle.Unpickler):
     """
     Remaps __main__.Chunk → rag.Chunk.
 
-    chunks.pkl is built by running `python rag.py build` directly, which makes
-    rag.py the __main__ module. Python's pickle stores the dataclass as
+    chunks.pkl is built by running `python -m propra.retrieval.rag build`, which
+    makes rag.py the __main__ module. Python's pickle stores the dataclass as
     __main__.Chunk. When the index is loaded from main.py or uvicorn, __main__
     is no longer rag.py, so the default Unpickler raises
     "Can't get attribute 'Chunk'". This subclass redirects the lookup.
@@ -319,7 +319,7 @@ class Retriever:
         if not self._index_path.exists():
             raise FileNotFoundError(
                 f"FAISS index not found at {self._index_path}. "
-                "Run: python rag.py build"
+                "Run from the repo root: python -m propra.retrieval.rag build"
             )
         self._index = faiss.read_index(str(self._index_path))
         with open(self._chunks_path, "rb") as f:
@@ -387,7 +387,7 @@ class Retriever:
         return results
 
 
-# Singleton — import and use directly: from rag import retriever
+# Singleton — import and use directly: from propra.retrieval.rag import retriever
 retriever = Retriever()
 
 
@@ -412,7 +412,7 @@ def _cmd_query(query: str, k: int = 5, jurisdiction: str | None = None) -> None:
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args:
-        print("Usage: python rag.py build | python rag.py query <text> [k] [jurisdiction]")
+        print("Usage: python -m propra.retrieval.rag build | python -m propra.retrieval.rag query <text> [k] [jurisdiction]")
         sys.exit(1)
 
     cmd = args[0]
@@ -420,7 +420,7 @@ if __name__ == "__main__":
         _cmd_build()
     elif cmd == "query":
         if len(args) < 2:
-            print("Usage: python rag.py query <text> [k] [jurisdiction]")
+            print("Usage: python -m propra.retrieval.rag query <text> [k] [jurisdiction]")
             sys.exit(1)
         q = args[1]
         k_arg = int(args[2]) if len(args) > 2 else 5

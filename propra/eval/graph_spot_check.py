@@ -7,6 +7,9 @@ Runs five quality checks against graph.pkl by sampling nodes per state:
   3. Supplements edges   — every state's §§ link back to the MBO counterpart via supplements
   4. Section coverage    — no gaps in section numbering per state
   5. Cross-state consistency — same topic nodes across states have consistent types
+
+Usage (from the repo root):
+    python -m propra.eval.graph_spot_check
 """
 
 import pickle

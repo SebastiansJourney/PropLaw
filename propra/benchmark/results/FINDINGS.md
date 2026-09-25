@@ -205,15 +205,15 @@ rename or new state carries the same silent-mismatch risk.
   missing, so a fresh environment could not import the judge). 6 of 6
   covered; the refactor is still open.
 - 2026-09-25 · Refactor: two more places found while preparing it,
-  eight in total: \_STATE\_CONFIGS in data/generate\_lbo\_inventory.py
+  eight at that point (three more followed in review, see Resolution): \_STATE\_CONFIGS in data/generate\_lbo\_inventory.py
   (13 states, parser config) and PDFS in data/bulk\_extract.py, which
   still listed LBO\_HB.pdf and would have recreated LBO\_HB.txt on the
   next extraction run.
 **Resolution:** propra/jurisdictions.py is the single registry (stem,
 ISO code, label, full name, parser header type, PDF extraction flag),
-17 entries. Ten consumer modules derive from it and keep their public
+17 entries. Nine consumer modules derive from it and keep their public
 names; audit\_extraction\_artifacts.py holds no table of its own and is
-covered by the test. Three of the ten were missed in the first version
+covered by the test. Three of the nine were missed in the first version
 of PR #7 and found by the qa-reviewer: EXPECTED\_STATES in
 eval/graph\_spot\_check.py, \_full\_lbo\_name in data/draft\_inventory.py
 (five stale keys, so five states silently got the raw code instead of
