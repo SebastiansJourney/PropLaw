@@ -35,7 +35,7 @@
 
 **Date:** 2026-03-26
 **Status:** OPEN — corpus extraction issue
-**Reviewed:** 2026-09-20
+**Reviewed:** 2026-09-26
 **Query:** Q13 — Wann ist ein Bauvorhaben verfahrensfrei?
 **Finding:** Both RAG and GraphRAG scored Retrieval=0 for this query.
 The BbgBO corpus does not contain sufficient content from the
@@ -54,7 +54,7 @@ Will improve after corpus fix.
 
 **Date:** 2026-03-26
 **Status:** OPEN — known, document only
-**Reviewed:** 2026-09-20
+**Reviewed:** 2026-09-26
 **Finding:** Q1 RAG retrieval\_ms = 37,877ms (vs 20-70ms for all
 subsequent queries). This is the sentence-transformer model loading
 on first FAISS call. Skews RAG mean retrieval\_ms significantly.
@@ -168,7 +168,7 @@ A wrong law title undermines trust in an otherwise correct citation.
 
 **Date:** 2026-09-25
 **Status:** OPEN
-**Reviewed:** 2026-09-25
+**Reviewed:** 2026-09-26
 **Finding:** pip 22.3.1 in the global pyenv Python 3.11.3 cannot reach
 PyPI on the development machine. Every request fails with:
 `Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1002)'))`
@@ -546,4 +546,4 @@ chore/claude-setup.
 
 \---
 
-*Last updated: 2026-09-20 — day planning: F001, F002, F003 closed (superseded by Stage 3), F006 deferred until 2026-11-02, F004 and F005 scheduled*
+*Last updated: 2026-09-26 — day planning: F004, F005, F016 scheduled (1 h budget); none over 21 days*
