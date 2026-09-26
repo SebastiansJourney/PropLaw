@@ -386,6 +386,7 @@ These breakdowns allow you to identify not just which system scores higher overa
 - **Q13 is the designated KG headline demo case**: This query requires multi-hop traversal through the verfahrensfrei catalogue (§61 BbgBO or state equivalent) plus the materiell-rechtliche caveat that exemption does not waive substantive requirements. RAG is expected to fail the second or third element due to cross-paragraph dependency. This failure mode is the primary pitch evidence for the KG architectural advantage.
 - **Ground truth elements acknowledge cross-state variance**: Where LBO rules differ by state (e.g. Stellplatz ratios, Wandhöhe thresholds for Garagen-Privilegierung), elements are phrased to capture the common pattern with a "(staatsspezifisch)" qualifier. Judges must not penalise answers that correctly cite a state-specific value different from an unstated default.
 - **Latency is environment-dependent**: Latency figures reflect the specific hardware and API conditions of the test run and should not be generalised.
+- **Q1 carries the cold start**: In the 2026-03-26 run, Q1 RAG `retrieval_ms` is 37,877 ms because the first FAISS call loads the sentence-transformer model. Q1 is excluded from latency means or marked as a cold-start outlier. After warm-up, retrieval takes 20–70 ms. The 82.9 s measured in production on 2026-09-21 (F012) also include waking the sleeping Render instance and are not comparable to the benchmark figure.
 
 ---
 

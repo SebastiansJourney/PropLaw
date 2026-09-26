@@ -34,7 +34,7 @@
 ### F004 — Q13 Verfahrensfreiheit — retrieval misses § 61 BbgBO (corpus complete)
 
 **Date:** 2026-03-26
-**Status:** OPEN — corpus extraction issue
+**Status:** OPEN — retrieval misses § 61, query terminology (see Progress)
 **Reviewed:** 2026-09-26
 **Query:** Q13 — Wann ist ein Bauvorhaben verfahrensfrei?
 **Finding:** Both RAG and GraphRAG scored Retrieval=0 for this query.
@@ -69,27 +69,6 @@ Will improve after corpus fix.
 
 \---
 
-### F005 — Q1 cold-start latency outlier
-
-**Date:** 2026-03-26
-**Status:** OPEN — known, document only
-**Reviewed:** 2026-09-26
-**Finding:** Q1 RAG retrieval\_ms = 37,877ms (vs 20-70ms for all
-subsequent queries). This is the sentence-transformer model loading
-on first FAISS call. Skews RAG mean retrieval\_ms significantly.
-**Action:** Document in benchmark report. Exclude Q1 from latency
-aggregates or note as cold-start outlier. Consider warming the model
-before benchmark runs in future.
-**Impact:** Mean RAG retrieval\_ms is inflated. Real retrieval latency
-is 20-70ms after warm-up.
-**Measurement 2026-09-21:** The cold start measured in production is
-82.9 s, not the roughly 40 s from the benchmark. The benchmark figure
-covers only loading the embedding model, not waking up the sleeping
-Render instance. See F012.
-**Owner:** Sebastian (documentation only)
-
-\---
-
 ### F006 — Q11 GraphRAG +3 over RAG — classification layer effect
 
 **Date:** 2026-03-26
@@ -120,11 +99,17 @@ before KG enrichment is fully active.
 
 \---
 
-### F011 — ruff version drift: local 0.16.6, CI 0.15.7
+### F011 — ruff 0.16.x upgrade: pin bump and 40 findings
 
 **Date:** 2026-09-19
-**Status:** OPEN — in progress
+**Status:** DEFERRED — until the start of sprint 2
+**Deferred until:** 2026-10-09
 **Reviewed:** 2026-09-19
+**Reason:** The version drift is resolved: kontrolle.sh installs
+the ruff version pinned in ci.yml (4404fb2), so local and CI run 0.15.7;
+the lint step does not gate yet (F017). What remains is the upgrade to
+0.16.x: bump the pin in ci.yml and .pre-commit-config.yaml and resolve
+the 40 findings in one PR. That does not fit into the current sprint.
 **Finding:** ruff 0.16.x widened its default rule set (UP, I, SIM, B,
 FLY, BLE, ...). ci.yml and .pre-commit-config.yaml pin ruff to 0.15.7,
 the local environment runs 0.16.6. The earlier count of 89 findings is
@@ -242,6 +227,32 @@ fails lint, and a red CI on main blocks all other work.
 \---
 
 ## Closed Findings
+
+### F005 — Q1 cold-start latency outlier
+
+**Date:** 2026-03-26
+**Status:** CLOSED — resolved 2026-09-26
+**Reviewed:** 2026-09-26
+**Finding:** Q1 RAG retrieval\_ms = 37,877ms (vs 20-70ms for all
+subsequent queries). This is the sentence-transformer model loading
+on first FAISS call. Skews RAG mean retrieval\_ms significantly.
+**Action:** Document in benchmark report. Exclude Q1 from latency
+aggregates or note as cold-start outlier. Consider warming the model
+before benchmark runs in future.
+**Impact:** Mean RAG retrieval\_ms is inflated. Real retrieval latency
+is 20-70ms after warm-up.
+**Measurement 2026-09-21:** The cold start measured in production is
+82.9 s, not the roughly 40 s from the benchmark. The benchmark figure
+covers only loading the embedding model, not waking up the sleeping
+Render instance. See F012.
+**Resolution:** Documented in docs/benchmark\_methodology\_v2.1.md,
+Known Limitations, "Q1 carries the cold start": Q1 is excluded from
+latency means or marked as a cold-start outlier; warm retrieval takes
+20-70 ms; the 82.9 s production figure (F012) includes waking the Render
+instance and is not comparable.
+**Owner:** Sebastian (documentation only)
+
+\---
 
 ### F015 — kontrolle.sh trusts VIRTUAL\_ENV and can hit the global Python
 
