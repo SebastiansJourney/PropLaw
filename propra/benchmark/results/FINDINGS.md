@@ -42,10 +42,29 @@ The BbgBO corpus does not contain sufficient content from the
 verfahrensfreie Vorhaben list (§ 61 BbgBO equivalent). Top FAISS
 score was 0.70 — retrieval fired but returned wrong context.
 This is a corpus extraction gap, not a pipeline failure.
-**Action:** Re-extract BbgBO §61 section. Verify chunk content
-covers the full list of verfahrensfreie Vorhaben.
+**Action:** Re-extraction does not apply: BbgBO.txt holds the full
+§ 61 list (see Progress). Bridge the terminology gap between the query
+and the state code instead, e.g. by normalising "verfahrensfrei" and
+"genehmigungsfrei" or by using the MBO-to-state mapping in the KG.
+Then remove the xfail marker from propra/tests/test\_q13\_retrieval.py.
+CI skips that test because it has no FAISS index, so a stale xfail
+marker only shows up in a local run; run the test locally with the fix.
 **Impact:** Q13 scores (2/6 both systems) understate system quality.
 Will improve after corpus fix.
+**Progress:**
+- 2026-09-26 · propra/tests/test\_q13\_retrieval.py added, xfail(strict).
+  Retriever().retrieve(k=8, jurisdiction="DE-BB"): "Wann ist ein
+  Bauvorhaben verfahrensfrei?" returns § 62, 72, 83, 63, 73, 87, 79, 70
+  (scores 0.757 to 0.657), no § 61. "... genehmigungsfrei?" returns
+  § 61 Genehmigungsfreie Vorhaben at rank 6 (0.705). BbgBO.txt holds
+  the full § 61 list (line 699 on), so the gap is the query term, not
+  the corpus; the re-extraction in Action does not apply. pytest via
+  .venv/Scripts/python.exe: 1 xfailed; full suite 213 passed,
+  1 xfailed. Counter-check with the genehmigungsfrei query: 1 failed,
+  [XPASS(strict)].
+- 2026-09-26 · Even with "genehmigungsfrei" § 61 ranks only 6th
+  (0.705), behind §§ 72, 73, 83, 62, 63. The term explains part of the
+  gap, not all of it.
 **Owner:** Sebastian
 
 \---
