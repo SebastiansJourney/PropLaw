@@ -168,6 +168,8 @@ only. Rebuild the graph afterwards (law root nodes carry the name).
 A wrong law title undermines trust in an otherwise correct citation.
 **Owner:** Sebastian (legal-qa)
 
+\---
+
 ### F017 — kontrolle.sh lint step compares against main instead of gating like CI
 
 **Date:** 2026-09-25
@@ -194,6 +196,8 @@ comparison.
 **Impact:** The pre-push check CLAUDE.md requires can pass while CI
 fails lint, and a red CI on main blocks all other work.
 **Owner:** Sebastian
+
+\---
 
 ### F019 — certifi-based clients fail behind Norton TLS scanning, Q13 test red locally
 
@@ -253,6 +257,8 @@ unchanged.
   with the index: the Q13 test fails with the same OSError as on main
   (model not in the HF cache, F019), so behaviour there is unchanged.
 **Owner:** Sebastian
+
+\---
 
 ### F016 — pip in the global Python and in fresh venvs fails SSL verification
 
@@ -318,6 +324,8 @@ Norton scans TLS; tracked as F019.
   error, then the old path; repo .venv -> no bootstrap, "All present".
   The remaining certifi problem outside pip is F019.
 **Owner:** Sebastian
+
+\---
 
 ### F005 — Q1 cold-start latency outlier
 
@@ -399,6 +407,8 @@ Linux clone instead, see Progress.
   0.15.7 clean, "All green". A second run reported "All present
   (ruff==0.15.7)" without installing.
 **Owner:** Sebastian
+
+\---
 
 ### F010 — State-to-corpus-filename mapping hardcoded in six places
 
