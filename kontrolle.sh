@@ -6,7 +6,9 @@
 # Picks the repo's venv (or creates .venv), checks the test dependencies
 # and then runs three checks: tests, app import, linter. Every Python call
 # goes to the venv's interpreter by path, never to whatever `python` is
-# first on PATH, so the global Python is never touched (F015).
+# first on PATH, so the global Python is never touched (F015). The one
+# exception that installs anything is the system pip upgrading an outdated
+# venv pip (F016); it installs into the venv only.
 
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -41,14 +43,19 @@ for d in .venv venv env; do
   if [ -n "$(venv_python "$d")" ]; then VENV_DIR="$d"; break; fi
 done
 
-if [ -z "$VENV_DIR" ]; then
-  # A system Python is only needed to create the venv.
-  SYS_PY=""
+# A system Python 3.11+, by command name. Empty if there is none.
+find_sys_py(){
   for c in python3 python py; do
     if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(0 if sys.version_info>=(3,11) else 1)" 2>/dev/null; then
-      SYS_PY="$c"; break
+      echo "$c"; return
     fi
   done
+}
+
+SYS_PY=""
+if [ -z "$VENV_DIR" ]; then
+  # A system Python is only needed to create the venv.
+  SYS_PY="$(find_sys_py)"
   if [ -z "$SYS_PY" ]; then
     echo "  No venv found and no Python 3.11+ to create one."
     echo "  Install: https://www.python.org/downloads/  (tick 'Add to PATH' during setup)"
@@ -67,6 +74,27 @@ if ! "$PY" -c "import sys; sys.exit(0 if sys.prefix != sys.base_prefix else 1)" 
   exit 1
 fi
 echo "  Using: $PY ($("$PY" --version 2>&1))"
+
+# A new venv gets the pip bundled with its Python (ensurepip), e.g. 22.3.1
+# for 3.11.3. Before 24.2, pip trusts only its own certifi bundle, so
+# behind a TLS-scanning antivirus it cannot even upgrade itself (F016).
+# The system pip may be newer and use the OS trust store, so it upgrades
+# the venv's pip first. The check is on the version, not on "created this
+# run", so a venv left behind by a failed run gets the same chance. Needs
+# pip 22.3+ for --python; on failure the venv's own pip still gets its
+# turn in step 2. --python gets the absolute path: a relative one is
+# resolved against another directory when SYS_PY is a pyenv-win shim.
+if ! "$PY" -c "import sys, importlib.metadata as m; sys.exit(0 if tuple(int(x) for x in m.version('pip').split('.')[:2]) >= (24, 2) else 1)" 2>/dev/null; then
+  [ -n "$SYS_PY" ] || SYS_PY="$(find_sys_py)"
+  VENV_EXE="$("$PY" -c "import sys; print(sys.executable)")"
+  if [ -z "$SYS_PY" ]; then
+    echo "  Note: the venv's pip is older than 24.2 and no system Python 3.11+ was found to upgrade it."
+  elif ! PIP_ERR="$("$SYS_PY" -m pip --python "$VENV_EXE" install --quiet --upgrade pip 2>&1)"; then
+    echo "  Note: $SYS_PY ($("$SYS_PY" -m pip --version 2>/dev/null | awk '{print "pip " $2}')) could not upgrade the venv's pip:"
+    echo "        $(echo "$PIP_ERR" | grep -v '^[[:space:]]*$' | tail -1)"
+    echo "        Trying the venv's own pip next."
+  fi
+fi
 
 if [ -n "${VIRTUAL_ENV:-}" ] && ! "$PY" -c "import os, sys; n = lambda p: os.path.normcase(os.path.realpath(p)); sys.exit(0 if n(sys.prefix) == n(os.environ['VIRTUAL_ENV']) else 1)" 2>/dev/null; then
   echo "  Note: VIRTUAL_ENV points to $VIRTUAL_ENV,"
