@@ -41,9 +41,10 @@ for d in .venv venv env; do
   if [ -n "$(venv_python "$d")" ]; then VENV_DIR="$d"; break; fi
 done
 
+# Set only when this run creates the venv.
+SYS_PY=""
 if [ -z "$VENV_DIR" ]; then
   # A system Python is only needed to create the venv.
-  SYS_PY=""
   for c in python3 python py; do
     if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(0 if sys.version_info>=(3,11) else 1)" 2>/dev/null; then
       SYS_PY="$c"; break
@@ -67,6 +68,20 @@ if ! "$PY" -c "import sys; sys.exit(0 if sys.prefix != sys.base_prefix else 1)" 
   exit 1
 fi
 echo "  Using: $PY ($("$PY" --version 2>&1))"
+
+# A new venv gets the pip bundled with its Python (ensurepip), e.g. 22.3.1
+# for 3.11.3. That pip trusts only its own certifi bundle, so behind a
+# TLS-scanning antivirus it cannot even upgrade itself (F016). The system
+# pip may be newer and use the OS trust store, so let it upgrade the
+# venv's pip first. Needs pip 22.3+ for --python; on failure the venv's
+# own pip still gets its turn in step 2. --python gets the absolute path:
+# a relative one is resolved against another directory when SYS_PY is a
+# pyenv-win shim.
+if [ -n "$SYS_PY" ]; then
+  VENV_EXE="$("$PY" -c "import sys; print(sys.executable)")"
+  "$SYS_PY" -m pip --python "$VENV_EXE" install --quiet --upgrade pip 2>/dev/null \
+    || echo "  Note: $SYS_PY could not upgrade the venv's pip; trying the venv's own pip next."
+fi
 
 if [ -n "${VIRTUAL_ENV:-}" ] && ! "$PY" -c "import os, sys; n = lambda p: os.path.normcase(os.path.realpath(p)); sys.exit(0 if n(sys.prefix) == n(os.environ['VIRTUAL_ENV']) else 1)" 2>/dev/null; then
   echo "  Note: VIRTUAL_ENV points to $VIRTUAL_ENV,"
