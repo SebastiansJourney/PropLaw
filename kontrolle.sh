@@ -7,8 +7,8 @@
 # and then runs three checks: tests, app import, linter. Every Python call
 # goes to the venv's interpreter by path, never to whatever `python` is
 # first on PATH, so the global Python is never touched (F015). The one
-# exception is the system pip upgrading the venv's pip (F016); it installs
-# into the venv only.
+# exception that installs anything is the system pip upgrading an outdated
+# venv pip (F016); it installs into the venv only.
 
 set -uo pipefail
 cd "$(dirname "$0")"

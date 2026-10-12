@@ -281,9 +281,10 @@ Global Python: pip upgraded once to 26.2.1 with that file as a temporary
 Fresh venvs: `python -m venv` takes pip from the Python's ensurepip
 wheel (pip-22.3.1 for 3.11.3), not from the global site-packages, so the
 global upgrade alone does not help them. kontrolle.sh now lets the
-system pip upgrade a venv it has just created (`pip --python`, absolute
-path). Out of scope: other certifi-based clients (requests,
-huggingface\_hub) still fail on this machine while Norton scans TLS.
+system pip upgrade any venv whose pip is older than 24.2
+(`pip --python`, absolute path). Out of scope: other certifi-based
+clients (requests, huggingface\_hub) still fail on this machine while
+Norton scans TLS; tracked as F019.
 **Progress:**
 - 2026-10-12 · Global pyenv Python 3.11.3: `python -m pip install
   --upgrade pip --cert <Norton wscert.pem>` -> pip 26.2.1. Then
