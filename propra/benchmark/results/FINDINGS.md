@@ -254,8 +254,9 @@ unchanged.
   during collection", `ModuleNotFoundError: No module named
   'huggingface_hub'`, exit 1. Branch: "213 passed, 1 skipped", Q13
   skipped with "FAISS index not built", "All green", exit 0. Repo .venv
-  with the index: the Q13 test fails with the same OSError as on main
-  (model not in the HF cache, F019), so behaviour there is unchanged.
+  with the index: the Q13 test fails with the same error chain as on
+  main, `LocalEntryNotFoundError` raised as `OSError` (model not in the
+  HF cache, F019), so behaviour there is unchanged.
 **Owner:** Sebastian
 
 \---
