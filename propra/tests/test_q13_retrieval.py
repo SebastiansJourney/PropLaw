@@ -19,7 +19,6 @@ to huggingface.co, which fail SSL verification on the development machine
 (F019).
 """
 
-import huggingface_hub.constants
 import pytest
 
 from propra.retrieval.rag import CHUNKS_PATH, INDEX_PATH, Retriever
@@ -37,6 +36,11 @@ Q13 = "Wann ist ein Bauvorhaben verfahrensfrei?"
     reason="F004: query term 'verfahrensfrei' vs BbgBO 'Genehmigungsfreie Vorhaben'",
 )
 def test_q13_retrieval_reaches_bbgbo_section_61(monkeypatch):
+    # Imported here, not at module level: kontrolle.sh installs only the
+    # test dependencies, without huggingface_hub, and a module-level import
+    # would fail collection before the skipif applies (F018).
+    import huggingface_hub.constants
+
     monkeypatch.setattr(huggingface_hub.constants, "HF_HUB_OFFLINE", True)
     hits = Retriever().retrieve(Q13, k=8, jurisdiction="DE-BB")
     paragraphs = [h["source_paragraph"] for h in hits]

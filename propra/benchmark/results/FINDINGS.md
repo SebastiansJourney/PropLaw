@@ -168,6 +168,8 @@ only. Rebuild the graph afterwards (law root nodes carry the name).
 A wrong law title undermines trust in an otherwise correct citation.
 **Owner:** Sebastian (legal-qa)
 
+\---
+
 ### F017 — kontrolle.sh lint step compares against main instead of gating like CI
 
 **Date:** 2026-09-25
@@ -195,26 +197,7 @@ comparison.
 fails lint, and a red CI on main blocks all other work.
 **Owner:** Sebastian
 
-### F018 — kontrolle.sh does not install huggingface\_hub, test collection fails
-
-**Date:** 2026-10-12
-**Status:** OPEN
-**Reviewed:** 2026-10-12
-**Finding:** propra/tests/test\_q13\_retrieval.py (PR #9) imports
-`huggingface_hub.constants` at module level. kontrolle.sh installs only
-the minimal DEPS list for the test suite, which does not contain
-huggingface\_hub. In a fresh clone the import fails during collection
-(`ModuleNotFoundError: No module named 'huggingface_hub'`), before the
-skipif for the missing FAISS index is evaluated, and step [1/3] is red.
-CI does not see it because it installs the full requirements.txt.
-Found on 2026-10-12 while verifying F016 in a fresh clone; with
-huggingface\_hub installed by hand the same run gave 213 passed,
-1 skipped, "All green".
-**Action:** Either add huggingface\_hub to DEPS in kontrolle.sh or move
-the import into the test function, so collection works without it.
-**Impact:** kontrolle.sh is red in every fresh clone, so the pre-push
-check cannot pass there without a manual install.
-**Owner:** Sebastian
+\---
 
 ### F019 — certifi-based clients fail behind Norton TLS scanning, Q13 test red locally
 
@@ -241,6 +224,42 @@ cannot pass on the development machine.
 \---
 
 ## Closed Findings
+
+### F018 — kontrolle.sh does not install huggingface\_hub, test collection fails
+
+**Date:** 2026-10-12
+**Status:** CLOSED — resolved 2026-10-12
+**Reviewed:** 2026-10-12
+**Finding:** propra/tests/test\_q13\_retrieval.py (PR #9) imports
+`huggingface_hub.constants` at module level. kontrolle.sh installs only
+the minimal DEPS list for the test suite, which does not contain
+huggingface\_hub. In a fresh clone the import fails during collection
+(`ModuleNotFoundError: No module named 'huggingface_hub'`), before the
+skipif for the missing FAISS index is evaluated, and step [1/3] is red.
+CI does not see it because it installs the full requirements.txt.
+Found on 2026-10-12 while verifying F016 in a fresh clone; with
+huggingface\_hub installed by hand the same run gave 213 passed,
+1 skipped, "All green".
+**Action:** Either add huggingface\_hub to DEPS in kontrolle.sh or move
+the import into the test function, so collection works without it.
+**Impact:** kontrolle.sh is red in every fresh clone, so the pre-push
+check cannot pass there without a manual install.
+**Resolution:** The huggingface\_hub import moved from module level
+into the test function, which only runs where the FAISS index exists.
+Collection no longer needs the package. DEPS in kontrolle.sh are
+unchanged.
+**Progress:**
+- 2026-10-12 · 667edcd · Fresh clones, no venv, VIRTUAL\_ENV unset,
+  huggingface\_hub not installed. main (45c047b): step [1/3] "1 error
+  during collection", `ModuleNotFoundError: No module named
+  'huggingface_hub'`, exit 1. Branch: "213 passed, 1 skipped", Q13
+  skipped with "FAISS index not built", "All green", exit 0. Repo .venv
+  with the index: the Q13 test fails with the same error chain as on
+  main, `LocalEntryNotFoundError` raised as `OSError` (model not in the
+  HF cache, F019), so behaviour there is unchanged.
+**Owner:** Sebastian
+
+\---
 
 ### F016 — pip in the global Python and in fresh venvs fails SSL verification
 
@@ -306,6 +325,8 @@ Norton scans TLS; tracked as F019.
   error, then the old path; repo .venv -> no bootstrap, "All present".
   The remaining certifi problem outside pip is F019.
 **Owner:** Sebastian
+
+\---
 
 ### F005 — Q1 cold-start latency outlier
 
@@ -387,6 +408,8 @@ Linux clone instead, see Progress.
   0.15.7 clean, "All green". A second run reported "All present
   (ruff==0.15.7)" without installing.
 **Owner:** Sebastian
+
+\---
 
 ### F010 — State-to-corpus-filename mapping hardcoded in six places
 
