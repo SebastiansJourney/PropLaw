@@ -168,35 +168,6 @@ only. Rebuild the graph afterwards (law root nodes carry the name).
 A wrong law title undermines trust in an otherwise correct citation.
 **Owner:** Sebastian (legal-qa)
 
-### F016 — pip in the global Python and in fresh venvs fails SSL verification
-
-**Date:** 2026-09-25
-**Status:** OPEN
-**Reviewed:** 2026-09-26
-**Finding:** pip 22.3.1 in the global pyenv Python 3.11.3 cannot reach
-PyPI on the development machine. Every request fails with:
-`Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1002)'))`
-followed by `ERROR: Could not find a version that satisfies the
-requirement <package> (from versions: none)`. A venv freshly created
-from that Python inherits pip 22.3.1 and fails the same way, including
-`pip install --upgrade pip`, so it cannot repair itself. The existing
-project .venv (pip 26.2.1, same Python and OpenSSL 1.1.1t) reaches PyPI
-without error; checked with `pip install --dry-run`. Not verified: why
-the newer pip succeeds. A likely cause is that pip 24.2+ uses the
-Windows certificate store (truststore) while 22.3.1 uses only its
-bundled certifi, and a local proxy or security tool presents a
-certificate that only the Windows store trusts.
-**Action:** Find which certificate intercepts the connection, then
-either upgrade pip in the global Python once (e.g. via
-`--use-feature=truststore` or a temporary `--cert`) or point pip at the
-Windows store. Afterwards, check that a fresh venv can install
-requirements.txt.
-**Impact:** No new venv can be set up on this machine, so kontrolle.sh
-cannot be run from a fresh venv here (F015), and the existing .venv
-is the only working environment. Installing new dependencies into
-.venv still works.
-**Owner:** Sebastian
-
 ### F017 — kontrolle.sh lint step compares against main instead of gating like CI
 
 **Date:** 2026-09-25
@@ -224,9 +195,88 @@ comparison.
 fails lint, and a red CI on main blocks all other work.
 **Owner:** Sebastian
 
+### F018 — kontrolle.sh does not install huggingface\_hub, test collection fails
+
+**Date:** 2026-10-12
+**Status:** OPEN
+**Reviewed:** 2026-10-12
+**Finding:** propra/tests/test\_q13\_retrieval.py (PR #9) imports
+`huggingface_hub.constants` at module level. kontrolle.sh installs only
+the minimal DEPS list for the test suite, which does not contain
+huggingface\_hub. In a fresh clone the import fails during collection
+(`ModuleNotFoundError: No module named 'huggingface_hub'`), before the
+skipif for the missing FAISS index is evaluated, and step [1/3] is red.
+CI does not see it because it installs the full requirements.txt.
+Found on 2026-10-12 while verifying F016 in a fresh clone; with
+huggingface\_hub installed by hand the same run gave 213 passed,
+1 skipped, "All green".
+**Action:** Either add huggingface\_hub to DEPS in kontrolle.sh or move
+the import into the test function, so collection works without it.
+**Impact:** kontrolle.sh is red in every fresh clone, so the pre-push
+check cannot pass there without a manual install.
+**Owner:** Sebastian
+
 \---
 
 ## Closed Findings
+
+### F016 — pip in the global Python and in fresh venvs fails SSL verification
+
+**Date:** 2026-09-25
+**Status:** CLOSED — resolved 2026-10-12
+**Reviewed:** 2026-09-26
+**Finding:** pip 22.3.1 in the global pyenv Python 3.11.3 cannot reach
+PyPI on the development machine. Every request fails with:
+`Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1002)'))`
+followed by `ERROR: Could not find a version that satisfies the
+requirement <package> (from versions: none)`. A venv freshly created
+from that Python inherits pip 22.3.1 and fails the same way, including
+`pip install --upgrade pip`, so it cannot repair itself. The existing
+project .venv (pip 26.2.1, same Python and OpenSSL 1.1.1t) reaches PyPI
+without error; checked with `pip install --dry-run`. Not verified: why
+the newer pip succeeds. A likely cause is that pip 24.2+ uses the
+Windows certificate store (truststore) while 22.3.1 uses only its
+bundled certifi, and a local proxy or security tool presents a
+certificate that only the Windows store trusts.
+**Action:** Find which certificate intercepts the connection, then
+either upgrade pip in the global Python once (e.g. via
+`--use-feature=truststore` or a temporary `--cert`) or point pip at the
+Windows store. Afterwards, check that a fresh venv can install
+requirements.txt.
+**Impact:** No new venv can be set up on this machine, so kontrolle.sh
+cannot be run from a fresh venv here (F015), and the existing .venv
+is the only working environment. Installing new dependencies into
+.venv still works.
+**Resolution:** Cause found: Norton Antivirus (Web/Mail Shield) scans
+TLS and re-signs every certificate. pypi.org arrives with issuer
+`CN=Norton Web/Mail Shield Root`. That root is in the Windows stores
+(LocalMachine Root and CurrentUser Root), which pip 24.2+ uses via
+truststore, but not in certifi, the only bundle pip 22.3.1 trusts. The
+Norton root also ships as wscert.pem in Norton's ProgramData folder,
+the file NODE\_EXTRA\_CA\_CERTS points to.
+Global Python: pip upgraded once to 26.2.1 with that file as a temporary
+`--cert`. Afterwards pip reaches PyPI without `--cert`.
+Fresh venvs: `python -m venv` takes pip from the Python's ensurepip
+wheel (pip-22.3.1 for 3.11.3), not from the global site-packages, so the
+global upgrade alone does not help them. kontrolle.sh now lets the
+system pip upgrade a venv it has just created (`pip --python`, absolute
+path). Out of scope: other certifi-based clients (requests,
+huggingface\_hub) still fail on this machine while Norton scans TLS.
+**Progress:**
+- 2026-10-12 · Global pyenv Python 3.11.3: `python -m pip install
+  --upgrade pip --cert <Norton wscert.pem>` -> pip 26.2.1. Then
+  `pip install --dry-run requests` without `--cert`: no SSL error.
+- 2026-10-12 · Fresh venv from that Python: pip 22.3.1, `pip install
+  --upgrade pip` still fails SSL verification. After
+  `python -m pip --python <venv python> install --upgrade pip`: pip
+  26.2.1, `pip install -r requirements.txt` exit 0, `pip check` clean.
+- 2026-10-12 · 95c2f5b · kontrolle.sh bootstraps the pip of a venv it
+  creates. Fresh clone, no venv, VIRTUAL\_ENV unset: before, step 2 "pip
+  install failed." (SSL); after, step 2 "Done." and the venv has pip
+  26.2.1. Step [1/3] was then red from F018; with huggingface\_hub added
+  by hand: 213 passed, 1 skipped, "All green". Existing .venv: no
+  bootstrap, "All present (ruff==0.15.7)".
+**Owner:** Sebastian
 
 ### F005 — Q1 cold-start latency outlier
 
