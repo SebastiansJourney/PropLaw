@@ -16,7 +16,7 @@ skipped where it does not exist (CI). Where it exists, the embedding model was
 downloaded to build it, so the test loads the model from the local cache in
 Hugging Face offline mode. Online, every model load first sends HEAD requests
 to huggingface.co, which fail SSL verification on the development machine
-(same cause as F016).
+(F019).
 """
 
 import huggingface_hub.constants

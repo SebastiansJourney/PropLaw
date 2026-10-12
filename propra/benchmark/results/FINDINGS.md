@@ -216,6 +216,28 @@ the import into the test function, so collection works without it.
 check cannot pass there without a manual install.
 **Owner:** Sebastian
 
+### F019 — certifi-based clients fail behind Norton TLS scanning, Q13 test red locally
+
+**Date:** 2026-10-12
+**Status:** OPEN
+**Reviewed:** 2026-10-12
+**Finding:** F016 fixed pip only. Other clients that trust only certifi
+(requests, huggingface\_hub) still fail SSL verification on the
+development machine, because Norton Web/Mail Shield re-signs TLS with a
+root that is in the Windows stores but not in certifi (cause in F016).
+The embedding model is no longer in the local Hugging Face cache, so
+test\_q13\_retrieval.py, which loads it offline, fails with
+`LocalEntryNotFoundError` instead of the expected xfail
+(`1 failed, 213 passed` in the repo .venv on 2026-10-12). A fresh
+download would need huggingface.co, which hits the SSL error.
+**Action:** Make the model download work on this machine, e.g. via
+truststore (`truststore.inject_into_ssl()`) or REQUESTS\_CA\_BUNDLE
+pointing at certifi plus the Norton root for that one call, then
+re-download the model and check that the Q13 test is xfail again.
+**Impact:** kontrolle.sh is red in the repo .venv, so the pre-push check
+cannot pass on the development machine.
+**Owner:** Sebastian
+
 \---
 
 ## Closed Findings
@@ -276,6 +298,12 @@ huggingface\_hub) still fail on this machine while Norton scans TLS.
   26.2.1. Step [1/3] was then red from F018; with huggingface\_hub added
   by hand: 213 passed, 1 skipped, "All green". Existing .venv: no
   bootstrap, "All present (ruff==0.15.7)".
+- 2026-10-12 · 118e6f9 · After review: bootstrap gated on venv pip
+  < 24.2 instead of "created this run". Fresh clones: no venv -> venv
+  pip 26.2.1, "Done."; leftover .venv with pip 22.3.1 -> pip 26.2.1,
+  "Done."; injected system-pip failure -> note with pip version and
+  error, then the old path; repo .venv -> no bootstrap, "All present".
+  The remaining certifi problem outside pip is F019.
 **Owner:** Sebastian
 
 ### F005 — Q1 cold-start latency outlier
