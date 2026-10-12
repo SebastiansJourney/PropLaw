@@ -24,6 +24,9 @@
   hash read from GitHub after the push, or a command and its output.
   A local hash that never reached GitHub is not evidence.
 * A finding is updated in the same commit that changes its state.
+  A finding never cites the hash of the commit that changes it; that
+  change is referred to as "this commit" or by its PR number. Hashes of
+  earlier commits are read from GitHub after the push.
 * Reference finding IDs in CSV notes column for traceability.
 * Commit this file with every benchmark run.
 

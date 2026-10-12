@@ -136,6 +136,9 @@ looked at *and decided on*. Age = today minus Reviewed.
   run: a date set after the fact hides exactly the ageing that should stay
   visible.
 - A finding is updated in the same commit that changes its state.
+  A finding never cites the hash of the commit that changes it; that
+  change is referred to as "this commit" or by its PR number. Hashes of
+  earlier commits are read from GitHub after the push.
   Multi-step findings carry a `**Progress:**` block (see the header of
   `FINDINGS.md`).
 - A Monday scheduled task reports overdue findings without touching the file.
